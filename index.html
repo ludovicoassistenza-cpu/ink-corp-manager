@@ -388,35 +388,59 @@
 
         // === AUTH ===
         async function authLogin() {
-            const user = document.getElementById('login-user').value.trim();
-            const pass = document.getElementById('login-pass').value.trim();
-            const msg = document.getElementById('auth-msg');
+        const user = document.getElementById('login-user').value.trim();
+        const pass = document.getElementById('login-pass').value.trim();
+        const msg = document.getElementById('auth-msg');
 
-            console.log("Tentativo Login per:", user);
+        console.log('Login attempt for:', user);
 
-            if(!user || !pass) return msg.innerText = "Inserisci credenziali.";
-            msg.innerText = "Verifica in corso...";
+        if(!user || !pass) {
+            msg.innerText = "Inserisci credenziali.";
+            return;
+        }
 
-            try {
-                if(!client) throw new Error("Client DB non pronto.");
-                
-                const { data, error } = await client.from('users').select('*').eq('username', user).eq('password', pass).single();
-                
-                if(error) {
-                    console.error("Login Error DB:", error);
-                    throw new Error("Credenziali non valide.");
-                }
-                if(!data) throw new Error("Utente non trovato.");
+        msg.innerText = "Verifica in corso...";
 
-                console.log("Login Success:", data);
+        try {
+            console.log('Querying Supabase for user:', user);
+            
+            const { data, error } = await client
+                .from('users')
+                .select('*')
+                .eq('username', user)
+                .eq('password', pass)
+                .maybeSingle();
 
-                currentUser = data;
-                document.getElementById('login-screen').classList.add('hidden');
-                document.getElementById('app-interface').classList.remove('hidden');
-                document.getElementById('app-interface').classList.remove('opacity-0');
-                
-                playSound('success');
-                updateUserDisplay();
+            console.log('Query result:', { data, error });
+
+            if(error) {
+                console.error('Login Error:', error);
+                msg.innerText = "ERRORE: " + error.message;
+                return;
+            }
+
+            if(!data) {
+                console.log('No user found with these credentials');
+                msg.innerText = "ACCESSO NEGATO: Credenziali invalide";
+                return;
+            }
+
+            console.log('Login successful for:', data);
+            msg.innerText = "Accesso concesso!";
+
+            currentUser = data;
+            document.getElementById('login-screen').classList.add('hidden');
+            document.getElementById('app-interface').classList.remove('hidden');
+            document.getElementById('app-interface').classList.remove('opacity-0');
+
+            playSound('success');
+            updateUserDisplay();
+
+        } catch(e) {
+            console.error('Unexpected error:', e);
+            msg.innerText = "ERRORE CRITICO: " + e.message;
+        }
+    }
                 initApp();
                 logEvent(`Login effettuato.`, 'info');
 
