@@ -82,6 +82,8 @@
     <audio id="sfx-alarm" src="https://assets.mixkit.co/active_storage/sfx/995/995-preview.mp3"></audio>
     <audio id="sfx-upgrade" src="https://assets.mixkit.co/active_storage/sfx/2578/2578-preview.mp3"></audio>
     <audio id="sfx-type" src="https://assets.mixkit.co/active_storage/sfx/2357/2357-preview.mp3"></audio>
+    <audio id="sfx-access" src="https://assets.mixkit.co/active_storage/sfx/1132/1132-preview.mp3"></audio>
+    <audio id="sfx-denied" src="https://assets.mixkit.co/active_storage/sfx/2953/2953-preview.mp3"></audio>
 
     <!-- === LOGIN SCREEN === -->
     <div id="login-screen" class="fixed inset-0 z-[100] flex items-center justify-center bg-[#020617] bg-[url('https://www.transparenttextures.com/patterns/dark-leather.png')]">
@@ -613,7 +615,7 @@
             const newItem = {};
             newItem[dbCols.name] = document.getElementById('new-name').value;
             newItem[dbCols.desc] = document.getElementById('new-desc').value;
-            newItem[dbCols.value] = parseFloat(document.getElementById('new-value').value) || 0;
+            newItem[dbCols.value] = parseInt(document.getElementById('new-value').value, 10) || 0;
             newItem[dbCols.roi] = parseFloat(document.getElementById('new-roi').value) || 0;
             newItem[dbCols.risk] = document.getElementById('new-risk').value;
             newItem[dbCols.status] = 'Attivo';
@@ -632,7 +634,7 @@
             const id = document.getElementById('edit-id').value;
             const updates = {};
             updates[dbCols.name] = document.getElementById('edit-name').value;
-            updates[dbCols.value] = parseFloat(document.getElementById('edit-value').value);
+            updates[dbCols.value] = parseInt(document.getElementById('edit-value').value, 10);
             updates[dbCols.roi] = parseFloat(document.getElementById('edit-roi').value);
             updates[dbCols.status] = document.getElementById('edit-status').value;
             updates[dbCols.desc] = document.getElementById('edit-desc').value;
@@ -668,7 +670,7 @@
             let up = {}; let msg = "";
             if(type==='security') { up[dbCols.risk] = 'Basso'; msg="Upgrade Sicurezza"; }
             if(type==='automation') { up[dbCols.roi] = (parseFloat(document.getElementById('edit-roi').value)||0) + 2; msg="Upgrade Automazione"; }
-            if(type==='marketing') { up[dbCols.value] = Math.floor((parseFloat(document.getElementById('edit-value').value)||0) * 1.1); msg="Upgrade Marketing"; }
+            if(type==='marketing') { up[dbCols.value] = Math.floor((parseInt(document.getElementById('edit-value').value, 10)||0) * 1.1); msg="Upgrade Marketing"; }
 
             if(confirm("Confermare spesa?")) {
                 try {
@@ -696,7 +698,7 @@
             else if(roll >= 90) { mult=1.15; msg="SUCCESSO: Profitti su " + target[dbCols.name]; type="success"; playSound('sfx-coin'); }
             else { msg="Andamento stabile su " + target[dbCols.name]; }
 
-            const newVal = Math.floor((parseFloat(target[dbCols.value])||0) * mult);
+            const newVal = Math.floor((parseInt(target[dbCols.value], 10)||0) * mult);
             let up = {}; up[dbCols.value] = newVal;
             
             await client.from('investments').update(up).eq('id', target.id);
