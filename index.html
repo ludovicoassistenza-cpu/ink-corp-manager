@@ -192,13 +192,14 @@
     <!-- MODAL EDIT -->
     <div id="edit-modal" class="fixed inset-0 z-50 hidden bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
         <div class="bg-slate-900 border-2 border-slate-700 w-full max-w-3xl rounded-lg shadow-2xl flex flex-col md:flex-row overflow-hidden animate-[fadeIn_0.2s_ease-out]">
-            <div class="p-6 w-full md:w-1/2 border-r border-slate-700">
+            <div class="p-6 w-full md:w-1/2 border-r border-slate-700 flex flex-col">
                 <h3 class="fantasy-title text-xl text-white mb-4 border-b border-slate-700 pb-2">Gestione Asset</h3>
                 <input type="hidden" id="edit-id">
-                <div class="space-y-4">
+                <div class="space-y-4 flex-grow">
                     <div>
                         <label class="text-xs uppercase text-slate-500 font-bold">Nome</label>
-                        <div id="modal-asset-name" class="text-amber-500 font-bold text-lg truncate">---</div>
+                        <!-- MODIFICA: Input invece di div statico -->
+                        <input type="text" id="edit-name" class="w-full bg-slate-800 border border-slate-600 rounded p-2 text-amber-500 font-bold text-lg focus:border-amber-500 outline-none transition-colors">
                     </div>
                     <div>
                         <label class="text-xs uppercase text-slate-500 font-bold">Valore Attuale (GP)</label>
@@ -222,7 +223,10 @@
                         <label class="text-xs uppercase text-slate-500 font-bold">Note</label>
                         <textarea id="edit-desc" rows="2" class="w-full bg-slate-800 border border-slate-600 rounded p-2 text-slate-300 text-sm outline-none transition-colors"></textarea>
                     </div>
-                    <button onclick="saveChanges()" class="w-full bg-amber-700 hover:bg-amber-600 text-white font-bold py-2 rounded transition-colors uppercase text-sm shadow-md">Salva Modifiche</button>
+                    <button onclick="saveChanges()" class="w-full bg-amber-700 hover:bg-amber-600 text-white font-bold py-2 rounded transition-colors uppercase text-sm shadow-md mt-2">Salva Modifiche</button>
+                    
+                    <!-- NUOVO PULSANTE ELIMINA -->
+                    <button onclick="deleteAsset()" class="w-full mt-3 bg-red-900/50 hover:bg-red-800 text-red-300 font-bold py-2 rounded transition-colors uppercase text-sm border border-red-800">ELIMINA ASSET</button>
                 </div>
             </div>
             <div class="p-6 w-full md:w-1/2 bg-slate-950">
@@ -401,6 +405,8 @@
                 const id = document.getElementById('edit-id').value;
                 const updates = {};
                 
+                // MODIFICA: Aggiorniamo anche il nome
+                if(DB_COLS.name) updates[DB_COLS.name] = document.getElementById('edit-name').value;
                 if(DB_COLS.value) updates[DB_COLS.value] = parseFloat(document.getElementById('edit-value').value) || 0;
                 if(DB_COLS.roi) updates[DB_COLS.roi] = parseFloat(document.getElementById('edit-roi').value) || 0;
                 if(DB_COLS.status) updates[DB_COLS.status] = document.getElementById('edit-status').value;
@@ -436,6 +442,28 @@
                 closeModal('create-modal'); initSystem();
                 logAction("Nuova impresa registrata.", "success");
             } catch (err) { handleDbError(err); } finally { btn.innerText = originalText; btn.disabled = false; }
+        }
+
+        // NUOVA FUNZIONE DI ELIMINAZIONE
+        async function deleteAsset() {
+            const id = document.getElementById('edit-id').value;
+            const name = document.getElementById('edit-name').value;
+
+            if(!id) return alert("Errore: ID Asset non trovato.");
+
+            if(confirm(`⛔ ELIMINAZIONE ⛔\n\nSei sicuro di voler eliminare definitivamente "${name}"?\nQuesta azione non può essere annullata.`)) {
+                try {
+                    const { error } = await client.from('investments').delete().eq('id', id);
+                    if(error) throw error;
+
+                    closeModal('edit-modal');
+                    initSystem();
+                    logAction(`Asset "${name}" eliminato definitivamente.`, "warn");
+                    playSound('sfx-alarm');
+                } catch(err) {
+                    handleDbError(err);
+                }
+            }
         }
 
         async function buyUpgrade(type) {
@@ -510,7 +538,10 @@
 
             playSound('sfx-click');
             document.getElementById('edit-id').value = item.id;
-            document.getElementById('modal-asset-name').innerText = DB_COLS.name ? (item[DB_COLS.name] || "Senza Nome") : "Senza Nome";
+            
+            // MODIFICA: Popolazione del campo input edit-name
+            document.getElementById('edit-name').value = DB_COLS.name ? (item[DB_COLS.name] || "") : "";
+            
             document.getElementById('edit-value').value = DB_COLS.value ? item[DB_COLS.value] : 0;
             document.getElementById('edit-roi').value = DB_COLS.roi ? item[DB_COLS.roi] : 0;
             document.getElementById('edit-status').value = DB_COLS.status ? item[DB_COLS.status] : 'Attivo';
