@@ -1,0 +1,535 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ink Corp. | Gestionale Gilda</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Supabase JS -->
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <!-- Font Fantasy Leggibile -->
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700&family=Inter:wght@400;600&display=swap" rel="stylesheet">
+
+    <style>
+        /* BASE THEME */
+        body { 
+            font-family: 'Inter', sans-serif; 
+            background-color: #0b0c10;
+            background-image: radial-gradient(circle at center, #1f2833 0%, #0b0c10 100%);
+            color: #c5c6c7;
+        }
+
+        h1, h2, h3, .fantasy-title { font-family: 'Cinzel', serif; letter-spacing: 0.05em; }
+
+        /* PANNELLI */
+        .card-panel {
+            background: #15191d;
+            border: 1px solid #3e3e3e;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.5);
+            transition: all 0.2s ease;
+        }
+        .card-panel:hover {
+            border-color: #d69e2e;
+            transform: translateY(-2px);
+        }
+
+        .header-bg {
+            background: linear-gradient(to right, #1a202c, #2d3748);
+            border-bottom: 2px solid #b7791f;
+        }
+
+        .rival-track { background: #2d3748; height: 12px; border-radius: 6px; overflow: hidden; }
+        .rival-fill { 
+            background: linear-gradient(90deg, #9b2c2c, #e53e3e); 
+            height: 100%; 
+            transition: width 0.5s;
+        }
+
+        /* UTILS */
+        .clickable-stat:hover {
+            background-color: rgba(255,255,255,0.05);
+            cursor: pointer;
+            border-color: #d69e2e;
+        }
+
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #0b0c10; }
+        ::-webkit-scrollbar-thumb { background: #4a5568; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #718096; }
+
+        .loader {
+            border: 3px solid rgba(255,255,255,0.1);
+            border-left-color: #ecc94b;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin { 100% { transform: rotate(360deg); } }
+    </style>
+</head>
+<body class="h-screen flex flex-col overflow-hidden">
+
+    <!-- AUDIO FILES -->
+    <audio id="sfx-click" src="https://assets.mixkit.co/active_storage/sfx/2568/2568-preview.mp3"></audio>
+    <audio id="sfx-coin" src="https://assets.mixkit.co/active_storage/sfx/2003/2003-preview.mp3"></audio>
+    <audio id="sfx-alarm" src="https://assets.mixkit.co/active_storage/sfx/995/995-preview.mp3"></audio>
+    <audio id="sfx-upgrade" src="https://assets.mixkit.co/active_storage/sfx/2578/2578-preview.mp3"></audio>
+
+    <!-- HEADER -->
+    <header class="header-bg p-4 shadow-lg flex-shrink-0 z-20">
+        <div class="container mx-auto max-w-7xl flex flex-col md:flex-row justify-between items-center gap-4">
+            
+            <!-- Logo (REFRESH) -->
+            <div class="flex items-center gap-4 cursor-pointer group" onclick="initSystem()" title="Ricarica Dati">
+                <div class="w-12 h-12 bg-amber-600 rounded-lg flex items-center justify-center text-black font-bold text-2xl border-2 border-amber-300 shadow-lg fantasy-title group-hover:scale-105 transition-transform">
+                    IC
+                </div>
+                <div>
+                    <h1 class="text-2xl text-amber-500 font-bold uppercase text-shadow group-hover:text-amber-300 transition-colors">Ink Corp.</h1>
+                    <p class="text-xs text-slate-400 uppercase tracking-widest group-hover:text-slate-300">Tesoro della Gilda <span class="text-[10px] opacity-50 ml-1">↻ RELOAD</span></p>
+                </div>
+            </div>
+
+            <!-- Stats -->
+            <div class="flex items-center gap-6">
+                <div class="flex flex-col items-end group">
+                    <label class="text-[10px] uppercase text-slate-500 font-bold group-hover:text-amber-500 transition-colors">Scenario</label>
+                    <div class="relative">
+                        <select id="world-state" onchange="changeWorldState()" class="appearance-none bg-slate-800 border border-slate-600 text-amber-500 text-sm font-bold rounded px-4 py-1 pr-8 outline-none hover:border-amber-500 cursor-pointer shadow-sm transition-all focus:ring-1 focus:ring-amber-500">
+                            <option value="neutral">⚖️ Stabile</option>
+                            <option value="war">⚔️ Guerra</option>
+                            <option value="boom">💰 Boom Econ.</option>
+                            <option value="crisis">📉 Crisi</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="bg-slate-900 rounded border border-slate-700 flex overflow-hidden cursor-default select-text">
+                    <div class="px-4 py-2 border-r border-slate-700">
+                        <div class="text-[10px] text-slate-500 uppercase font-bold">Capitale</div>
+                        <div id="total-capital" class="text-emerald-400 font-mono font-bold text-lg">---</div>
+                    </div>
+                    <div class="px-4 py-2">
+                        <div class="text-[10px] text-slate-500 uppercase font-bold">Dividendi</div>
+                        <div id="total-dividends" class="text-cyan-400 font-mono font-bold text-lg">---</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- MAIN CONTENT -->
+    <div class="flex-grow container mx-auto max-w-7xl p-4 overflow-hidden grid grid-cols-12 gap-6">
+        
+        <!-- SIDEBAR -->
+        <div class="col-span-12 md:col-span-3 flex flex-col gap-4 overflow-y-auto">
+            <div class="card-panel p-4 rounded bg-slate-900">
+                <div class="flex justify-between items-center mb-2">
+                    <h3 class="text-xs font-bold text-red-500 uppercase">Rivali: Iron Syndicate</h3>
+                    <span class="text-[10px] text-red-400 animate-pulse">● ATTIVO</span>
+                </div>
+                <div class="rival-track mb-2 bg-black border border-slate-700">
+                    <div id="rival-bar" class="rival-fill w-0"></div>
+                </div>
+                <div class="flex justify-between text-[10px] text-slate-500 mb-3">
+                    <span>Minaccia</span>
+                    <span id="rival-percent">0%</span>
+                </div>
+                <button onclick="sabotageRival()" class="w-full py-2 bg-red-900/20 hover:bg-red-900/40 border border-red-800 text-red-400 text-xs font-bold uppercase rounded transition-colors shadow hover:shadow-red-900/20">
+                    Sabotaggio (500gp)
+                </button>
+            </div>
+
+            <div class="grid grid-cols-1 gap-2">
+                <button onclick="openCreateModal()" class="py-3 px-4 bg-slate-800 hover:bg-slate-700 border border-slate-600 rounded flex items-center gap-3 transition-colors text-left group shadow-sm">
+                    <span class="text-xl group-hover:text-emerald-400 transition-colors">✚</span>
+                    <div><div class="text-sm font-bold text-slate-200">Nuova Impresa</div><div class="text-[10px] text-slate-500">Aggiungi attività</div></div>
+                </button>
+                <button onclick="runSimulation()" class="py-3 px-4 bg-slate-800 hover:bg-slate-700 border border-slate-600 rounded flex items-center gap-3 transition-colors text-left group shadow-sm">
+                    <span class="text-xl group-hover:text-purple-400 transition-colors">🎲</span>
+                    <div><div class="text-sm font-bold text-slate-200">Evento Casuale</div><div class="text-[10px] text-slate-500">Tira d100</div></div>
+                </button>
+                <button onclick="collectDividends()" class="py-3 px-4 bg-slate-800 hover:bg-slate-700 border border-slate-600 rounded flex items-center gap-3 transition-colors text-left group shadow-sm">
+                    <span class="text-xl group-hover:text-cyan-400 transition-colors">💰</span>
+                    <div><div class="text-sm font-bold text-slate-200">Riscuoti Utili</div><div class="text-[10px] text-slate-500">Aggiungi al tesoro</div></div>
+                </button>
+            </div>
+
+            <div class="card-panel p-3 rounded flex-grow flex flex-col bg-black border border-slate-800 h-40">
+                <div class="text-[10px] font-bold text-slate-600 uppercase mb-2 border-b border-slate-800 pb-1 flex justify-between">
+                    <span>Registro Eventi</span>
+                    <span class="text-slate-700 cursor-pointer hover:text-slate-500" onclick="document.getElementById('activity-log').innerHTML = ''">CLEAR</span>
+                </div>
+                <div id="activity-log" class="overflow-y-auto flex-col-reverse flex text-[11px] font-mono space-y-1 h-full pr-1">
+                    <div class="text-emerald-500">> Sistema Inizializzato.</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- MAIN GRID -->
+        <div class="col-span-12 md:col-span-9 flex flex-col h-full relative">
+            <div class="h-40 mb-4 bg-slate-900/50 rounded border border-slate-800 p-2 flex items-center justify-center shadow-inner">
+                 <canvas id="riskChart" style="max-height: 100%;"></canvas>
+            </div>
+            <div id="loader-container" class="absolute inset-0 z-10 flex items-center justify-center bg-black/80 rounded backdrop-blur-sm">
+                <div class="flex flex-col items-center">
+                    <div class="loader mb-2"></div>
+                    <div class="text-amber-500 font-bold tracking-widest text-xs animate-pulse">CONNESSIONE ARCHIVI...</div>
+                </div>
+            </div>
+            <div id="investments-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 overflow-y-auto pr-2 pb-10 content-start h-full"></div>
+        </div>
+    </div>
+
+    <!-- MODAL EDIT -->
+    <div id="edit-modal" class="fixed inset-0 z-50 hidden bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="bg-slate-900 border-2 border-slate-700 w-full max-w-3xl rounded-lg shadow-2xl flex flex-col md:flex-row overflow-hidden animate-[fadeIn_0.2s_ease-out]">
+            <div class="p-6 w-full md:w-1/2 border-r border-slate-700">
+                <h3 class="fantasy-title text-xl text-white mb-4 border-b border-slate-700 pb-2">Gestione Asset</h3>
+                <input type="hidden" id="edit-id">
+                <div class="space-y-4">
+                    <div>
+                        <label class="text-xs uppercase text-slate-500 font-bold">Nome</label>
+                        <div id="modal-asset-name" class="text-amber-500 font-bold text-lg truncate">---</div>
+                    </div>
+                    <div>
+                        <label class="text-xs uppercase text-slate-500 font-bold">Valore Attuale (GP)</label>
+                        <input type="number" id="edit-value" class="w-full bg-slate-800 border border-slate-600 rounded p-2 text-emerald-400 font-mono font-bold focus:border-amber-500 outline-none transition-colors">
+                    </div>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="text-xs uppercase text-slate-500 font-bold">ROI (%)</label>
+                            <input type="number" step="0.1" id="edit-roi" class="w-full bg-slate-800 border border-slate-600 rounded p-2 text-cyan-400 font-mono outline-none transition-colors">
+                        </div>
+                        <div>
+                            <label class="text-xs uppercase text-slate-500 font-bold">Status</label>
+                            <select id="edit-status" class="w-full bg-slate-800 border border-slate-600 rounded p-2 text-white outline-none cursor-pointer">
+                                <option value="Attivo">Attivo</option>
+                                <option value="In attesa">In attesa</option>
+                                <option value="Liquidato">Liquidato</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div>
+                        <label class="text-xs uppercase text-slate-500 font-bold">Note</label>
+                        <textarea id="edit-desc" rows="2" class="w-full bg-slate-800 border border-slate-600 rounded p-2 text-slate-300 text-sm outline-none transition-colors"></textarea>
+                    </div>
+                    <button onclick="saveChanges()" class="w-full bg-amber-700 hover:bg-amber-600 text-white font-bold py-2 rounded transition-colors uppercase text-sm shadow-md">Salva Modifiche</button>
+                </div>
+            </div>
+            <div class="p-6 w-full md:w-1/2 bg-slate-950">
+                <h3 class="fantasy-title text-xl text-white mb-4 border-b border-slate-700 pb-2 flex items-center gap-2"><span>⚡</span> Miglioramenti</h3>
+                <div class="space-y-3 overflow-y-auto max-h-[300px]">
+                    <div onclick="buyUpgrade('security')" class="p-3 border border-slate-700 rounded hover:bg-slate-800 cursor-pointer group transition-colors">
+                        <div class="flex justify-between font-bold text-sm text-slate-300 group-hover:text-white"><span>Mercenari (Rischio: Basso)</span><span class="text-amber-500">-500gp</span></div>
+                        <p class="text-xs text-slate-500 mt-1">Aumenta la sicurezza della struttura.</p>
+                    </div>
+                    <div onclick="buyUpgrade('automation')" class="p-3 border border-slate-700 rounded hover:bg-slate-800 cursor-pointer group transition-colors">
+                        <div class="flex justify-between font-bold text-sm text-slate-300 group-hover:text-white"><span>Automazione (ROI +2%)</span><span class="text-amber-500">-1000gp</span></div>
+                        <p class="text-xs text-slate-500 mt-1">Gnomi o magia per produrre di più.</p>
+                    </div>
+                    <div onclick="buyUpgrade('marketing')" class="p-3 border border-slate-700 rounded hover:bg-slate-800 cursor-pointer group transition-colors">
+                        <div class="flex justify-between font-bold text-sm text-slate-300 group-hover:text-white"><span>Fama (Valore +10%)</span><span class="text-amber-500">-750gp</span></div>
+                        <p class="text-xs text-slate-500 mt-1">Spargi la voce in città.</p>
+                    </div>
+                </div>
+                <button onclick="closeModal('edit-modal')" class="w-full mt-6 py-2 border border-slate-600 text-slate-400 hover:text-white text-xs uppercase font-bold rounded transition-colors">Chiudi</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL CREATE -->
+    <div id="create-modal" class="fixed inset-0 z-50 hidden bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="bg-slate-900 border-2 border-emerald-700 w-full max-w-md rounded-lg shadow-2xl p-6 animate-[fadeIn_0.2s_ease-out]">
+            <h3 class="fantasy-title text-xl text-emerald-500 mb-4">Nuova Impresa</h3>
+            <form onsubmit="createNewAsset(event)" class="space-y-4">
+                <input type="text" id="new-name" required class="w-full bg-slate-800 border border-slate-600 rounded p-2 text-white outline-none focus:border-emerald-500 transition-colors" placeholder="Nome Attività">
+                <textarea id="new-desc" class="w-full bg-slate-800 border border-slate-600 rounded p-2 text-slate-300 text-sm outline-none focus:border-emerald-500 transition-colors" placeholder="Descrizione..."></textarea>
+                <div class="grid grid-cols-2 gap-4">
+                    <input type="number" id="new-value" required class="w-full bg-slate-800 border border-slate-600 rounded p-2 text-white font-mono focus:border-emerald-500 transition-colors" placeholder="Costo GP">
+                    <input type="number" step="0.1" id="new-roi" required class="w-full bg-slate-800 border border-slate-600 rounded p-2 text-white font-mono focus:border-emerald-500 transition-colors" value="5.0" placeholder="ROI %">
+                </div>
+                <select id="new-risk" class="w-full bg-slate-800 border border-slate-600 rounded p-2 text-white outline-none cursor-pointer">
+                    <option value="Basso">Rischio Basso</option>
+                    <option value="Medio" selected>Rischio Medio</option>
+                    <option value="Alto">Rischio Alto</option>
+                    <option value="Criminale">Criminale</option>
+                </select>
+                <div class="flex gap-4 pt-2">
+                    <button type="button" onclick="closeModal('create-modal')" class="flex-1 py-2 border border-slate-600 text-slate-400 rounded hover:bg-slate-800 transition-colors">Annulla</button>
+                    <button type="submit" class="flex-1 py-2 bg-emerald-700 hover:bg-emerald-600 text-white font-bold rounded transition-colors shadow-lg">Crea</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- JS LOGIC -->
+    <script>
+        const SUPABASE_URL = 'https://mazammutcogkxhugfwqm.supabase.co';
+        const SUPABASE_KEY = 'sb_publishable_fS4-JH4DgkckbiDbaxMLKQ_nZwiUpFp'; 
+
+        let client;
+        let globalData = [];
+        let riskChart = null;
+        let rivalProgress = parseInt(localStorage.getItem('inkCorp_rival') || "10");
+        let marketState = 'neutral';
+        
+        let DB_COLS = {
+            name: null, description: null, value: null, roi: null, risk: null, status: null
+        };
+
+        window.onload = function() { initSystem(); };
+
+        function playSound(id) {
+            const audio = document.getElementById(id);
+            if(audio) { audio.currentTime = 0; audio.play().catch(() => {}); }
+        }
+
+        function handleDbError(err) {
+            console.error(err);
+            if (err.message && (err.message.includes("row-level security") || err.code === "42501")) {
+                const msg = "⛔ PERMESSI SUPABASE MANCANTI ⛔\n\nNon puoi salvare i dati. Esegui questo SQL nella dashboard Supabase:\n\nCREATE POLICY \"Public Access\" ON investments FOR ALL USING (true);";
+                alert(msg);
+                logAction("BLOCCO DI SICUREZZA: Permessi DB mancanti.", "error");
+            } else {
+                alert("Errore database: " + err.message);
+                logAction("Errore: " + err.message, "error");
+            }
+        }
+
+        async function initSystem() {
+            const grid = document.getElementById('investments-grid');
+            const loader = document.getElementById('loader-container');
+            updateRivalBar();
+            try {
+                if (!client) client = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY, { auth: { persistSession: false } });
+                const { data, error } = await client.from('investments').select('*').order('id', { ascending: true });
+                if (error) throw error;
+
+                if (data && data.length > 0) {
+                    const sample = data[0];
+                    const keys = Object.keys(sample);
+                    const findKey = (candidates) => keys.find(k => candidates.includes(k.toLowerCase()));
+                    
+                    const dVal = findKey(['current_value', 'value', 'valore', 'cost', 'costo', 'price', 'prezzo', 'gp', 'amount', 'importo']);
+                    const dRoi = findKey(['roi_rate', 'roi', 'rate', 'rendimento', 'percent', 'percentuale', 'return', 'yield', 'interesse', 'tasso', 'profitto', 'r_rate']);
+                    const dRisk = findKey(['risk_level', 'risk', 'rischio', 'level', 'livello', 'pericolo']);
+                    const dStatus = findKey(['status', 'stato', 'condizione', 'state']);
+                    const dName = findKey(['name', 'nome', 'title', 'titolo', 'asset', 'impresa', 'label', 'business']);
+                    const dDesc = findKey(['description', 'descrizione', 'note', 'notes', 'info', 'desc']);
+
+                    if (dVal) DB_COLS.value = dVal;
+                    if (dRoi) DB_COLS.roi = dRoi;
+                    if (dRisk) DB_COLS.risk = dRisk;
+                    if (dStatus) DB_COLS.status = dStatus;
+                    if (dName) DB_COLS.name = dName;
+                    if (dDesc) DB_COLS.description = dDesc;
+                    
+                    if (!dName && !DB_COLS.name) DB_COLS.name = keys.find(k => typeof sample[k] === 'string' && k !== 'id' && k !== 'created_at');
+                    if (!dVal && !DB_COLS.value) DB_COLS.value = keys.find(k => typeof sample[k] === 'number' && k !== 'id');
+
+                    console.log("Mappa DB Rilevata:", DB_COLS);
+                    logAction(`Struttura DB: Valore->[${DB_COLS.value || 'N/A'}], ROI->[${DB_COLS.roi || 'N/A'}]`);
+                }
+
+                globalData = data;
+                renderDashboard(data);
+                updateChart(data);
+                logAction("Archivi sincronizzati.", "success");
+            } catch (err) { handleDbError(err); }
+            loader.classList.add('hidden');
+        }
+
+        function renderDashboard(data) {
+            const grid = document.getElementById('investments-grid');
+            const totalCap = document.getElementById('total-capital');
+            const totalDiv = document.getElementById('total-dividends');
+            let cap = 0; let div = 0; let multiplier = getMarketMultiplier(); let html = '';
+            
+            data.forEach(item => {
+                let val = DB_COLS.value ? parseFloat(item[DB_COLS.value]) : 0;
+                if(isNaN(val)) val = 0;
+                let roi = DB_COLS.roi ? parseFloat(item[DB_COLS.roi]) : 0;
+                if(isNaN(roi)) roi = 0;
+                let itemName = DB_COLS.name ? (item[DB_COLS.name] || "Asset Senza Nome") : "Asset Senza Nome";
+                let itemStatus = DB_COLS.status ? (item[DB_COLS.status] || 'Attivo') : 'Attivo';
+                let itemRisk = DB_COLS.risk ? (item[DB_COLS.risk] || 'Medio') : 'Medio';
+                let itemDesc = DB_COLS.description ? (item[DB_COLS.description] || '') : '';
+
+                cap += val;
+                if(itemStatus === 'Attivo') div += val * (roi * multiplier / 100);
+
+                let border = 'border-slate-700'; let text = 'text-slate-400';
+                if(itemStatus === 'Attivo') { border = 'border-emerald-800'; text = 'text-emerald-500'; }
+                if(itemStatus === 'In attesa') { border = 'border-amber-800'; text = 'text-amber-500'; }
+                if(itemStatus === 'Liquidato') { border = 'border-red-900'; text = 'text-red-500'; }
+
+                const safeData = JSON.stringify(item).replace(/"/g, '&quot;');
+
+                html += `
+                <div class="card-panel p-4 rounded flex flex-col ${border} relative overflow-hidden group">
+                    <div class="flex justify-between items-start mb-2">
+                        <h3 class="font-bold text-slate-200 truncate pr-2 text-sm">${itemName}</h3>
+                        <span class="text-[10px] uppercase border px-1 rounded ${border} ${text}">${itemStatus}</span>
+                    </div>
+                    <div class="text-[11px] text-slate-500 mb-3 h-8 line-clamp-2 italic">${itemDesc}</div>
+                    <div class="bg-black/30 p-2 rounded border border-slate-800 grid grid-cols-2 gap-2 mb-3">
+                        <div><span class="text-[10px] text-slate-500 uppercase block">Valore</span><span class="text-emerald-400 font-mono font-bold text-sm">${val.toLocaleString()}</span></div>
+                        <div class="text-right"><span class="text-[10px] text-slate-500 uppercase block">ROI</span><span class="text-cyan-400 font-mono font-bold text-sm">${roi}%</span></div>
+                        <div class="col-span-2 border-t border-slate-800 pt-1 flex justify-between"><span class="text-[10px] text-slate-500 uppercase">Rischio</span><span class="text-[10px] font-bold ${itemRisk === 'Alto' || itemRisk === 'Criminale' ? 'text-red-500' : 'text-slate-300'}">${itemRisk}</span></div>
+                    </div>
+                    <button onclick="openEditModal(${safeData})" class="mt-auto w-full py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-bold uppercase rounded transition-colors shadow-sm">Gestisci</button>
+                </div>`;
+            });
+
+            if (data.length === 0) html = `<div class="col-span-3 text-center text-slate-500 py-10 italic">Nessun registro trovato.</div>`;
+            grid.innerHTML = html;
+            totalCap.innerText = cap.toLocaleString() + " GP";
+            totalDiv.innerText = "+" + Math.floor(div).toLocaleString() + " GP";
+        }
+
+        async function saveChanges() {
+            const btn = document.querySelector('#edit-modal button[onclick="saveChanges()"]');
+            const originalText = btn.innerText; btn.innerText = "Salvataggio..."; btn.disabled = true;
+            try {
+                const id = document.getElementById('edit-id').value;
+                const updates = {};
+                
+                if(DB_COLS.value) updates[DB_COLS.value] = parseFloat(document.getElementById('edit-value').value) || 0;
+                if(DB_COLS.roi) updates[DB_COLS.roi] = parseFloat(document.getElementById('edit-roi').value) || 0;
+                if(DB_COLS.status) updates[DB_COLS.status] = document.getElementById('edit-status').value;
+                if(DB_COLS.description) updates[DB_COLS.description] = document.getElementById('edit-desc').value;
+                
+                if (Object.keys(updates).length === 0) throw new Error("Nessuna colonna rilevata per la modifica.");
+
+                const { error } = await client.from('investments').update(updates).eq('id', id);
+                if(error) throw error;
+
+                closeModal('edit-modal'); initSystem();
+                logAction("Modifiche salvate con successo.", "success");
+            } catch (err) { handleDbError(err); } finally { btn.innerText = originalText; btn.disabled = false; }
+        }
+
+        async function createNewAsset(e) {
+            e.preventDefault();
+            const btn = e.target.querySelector('button[type="submit"]');
+            const originalText = btn.innerText; btn.innerText = "Creazione..."; btn.disabled = true;
+            try {
+                const newItem = {};
+                // Tentativo di mapping sicuro, con fallback standard Supabase se auto-detect fallisce
+                newItem[DB_COLS.name || 'name'] = document.getElementById('new-name').value;
+                newItem[DB_COLS.description || 'description'] = document.getElementById('new-desc').value;
+                newItem[DB_COLS.value || 'current_value'] = parseFloat(document.getElementById('new-value').value) || 0;
+                newItem[DB_COLS.roi || 'roi_rate'] = parseFloat(document.getElementById('new-roi').value) || 0;
+                newItem[DB_COLS.risk || 'risk_level'] = document.getElementById('new-risk').value;
+                newItem[DB_COLS.status || 'status'] = 'Attivo';
+
+                const { error } = await client.from('investments').insert([newItem]);
+                if(error) throw error;
+
+                closeModal('create-modal'); initSystem();
+                logAction("Nuova impresa registrata.", "success");
+            } catch (err) { handleDbError(err); } finally { btn.innerText = originalText; btn.disabled = false; }
+        }
+
+        async function buyUpgrade(type) {
+            playSound('sfx-upgrade');
+            const id = document.getElementById('edit-id').value;
+            if (!id) return alert("Errore interno: ID asset non trovato.");
+
+            let up = {}; let canUpgrade = false;
+            
+            if(type === 'security') { if(DB_COLS.risk) { up[DB_COLS.risk] = 'Basso'; canUpgrade = true; } else logAction("Colonna 'Rischio' non trovata.", "warn"); }
+            if(type === 'automation') { if(DB_COLS.roi) { const oldRoi = parseFloat(document.getElementById('edit-roi').value) || 0; up[DB_COLS.roi] = oldRoi + 2; canUpgrade = true; } else logAction("Colonna 'ROI' non trovata.", "warn"); }
+            if(type === 'marketing') { if(DB_COLS.value) { const oldVal = parseFloat(document.getElementById('edit-value').value) || 0; up[DB_COLS.value] = Math.floor(oldVal * 1.1); canUpgrade = true; } else logAction("Colonna 'Valore' non trovata.", "warn"); }
+            
+            if (!canUpgrade) return alert("Impossibile applicare upgrade: Colonna DB mancante.");
+
+            if(confirm("Confermi l'acquisto del potenziamento?")) {
+                try {
+                    const { error } = await client.from('investments').update(up).eq('id', id);
+                    if (error) throw error;
+                    closeModal('edit-modal'); initSystem();
+                    logAction("Upgrade acquistato con successo!", "success");
+                } catch (err) { handleDbError(err); }
+            }
+        }
+
+        function openCreateModal() { playSound('sfx-click'); document.getElementById('create-modal').classList.remove('hidden'); }
+        function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
+        function changeWorldState() { marketState = document.getElementById('world-state').value; playSound('sfx-alarm'); renderDashboard(globalData); logAction(`Scenario cambiato: ${marketState.toUpperCase()}`, "warn"); }
+        function getMarketMultiplier() { return marketState === 'boom' ? 1.5 : (marketState === 'crisis' ? 0.5 : (marketState === 'war' ? 1.2 : 1.0)); }
+        function updateRivalBar() { if(Math.random() > 0.6 && rivalProgress <= 100) rivalProgress++; localStorage.setItem('inkCorp_rival', rivalProgress); document.getElementById('rival-bar').style.width = rivalProgress + "%"; document.getElementById('rival-percent').innerText = rivalProgress + "%"; }
+        function sabotageRival() { if(confirm("Spendere 500 GP?")) { playSound('sfx-upgrade'); rivalProgress = Math.max(0, rivalProgress - 20); updateRivalBar(); logAction("Sabotaggio completato.", "success"); } }
+        
+        async function runSimulation() {
+            playSound('sfx-click');
+            if(globalData.length === 0) return logAction("Nessun asset attivo.", "error");
+            const active = globalData.filter(x => (DB_COLS.status ? x[DB_COLS.status] : 'Attivo') === 'Attivo');
+            if(active.length === 0) return alert("Nessun asset attivo.");
+            
+            const target = active[Math.floor(Math.random() * active.length)];
+            let roll = Math.floor(Math.random() * 100) + 1;
+            if(marketState === 'crisis') roll -= 15; if(marketState === 'boom') roll += 15;
+
+            let mult = 1; let msg = ""; let color = "text-slate-400";
+            let name = DB_COLS.name ? target[DB_COLS.name] : "Asset";
+
+            if(roll <= 10) { mult = 0.9; msg = `CRITICO: ${name} perde valore (-10%)`; color = "text-red-500"; playSound('sfx-alarm'); }
+            else if (roll <= 40) { mult = 0.95; msg = `Flessione per ${name} (-5%)`; color = "text-amber-500"; }
+            else if (roll <= 80) { mult = 1.02; msg = `Stabile: ${name} (+2%)`; }
+            else { mult = 1.15; msg = `SUCCESSO: ${name} cresce! (+15%)`; color = "text-emerald-500"; playSound('sfx-coin'); }
+
+            if (DB_COLS.value) {
+                let curVal = parseFloat(target[DB_COLS.value]) || 0;
+                const newVal = Math.floor(curVal * mult);
+                let payload = {}; payload[DB_COLS.value] = newVal;
+                try {
+                    const { error } = await client.from('investments').update(payload).eq('id', target.id);
+                    if(error) throw error;
+                    logAction(msg, color.includes('red') ? 'error' : (color.includes('emerald') ? 'success' : 'info')); initSystem();
+                } catch(e) { handleDbError(e); }
+            } else { logAction("Impossibile simulare: colonna valore non trovata.", "error"); }
+        }
+
+        function collectDividends() {
+            playSound('sfx-coin');
+            alert("Hai incassato: " + document.getElementById('total-dividends').innerText);
+            logAction(`Incasso effettuato`, "success");
+        }
+
+        function logAction(msg, type='info') {
+            const log = document.getElementById('activity-log');
+            const div = document.createElement('div');
+            div.className = type === 'success' ? "text-emerald-500" : (type === 'error' ? "text-red-500" : (type === 'warn' ? "text-amber-500" : "text-slate-400"));
+            div.innerText = "> " + msg;
+            log.prepend(div);
+        }
+
+        function updateChart(data) {
+            const ctx = document.getElementById('riskChart').getContext('2d');
+            const counts = { 'Basso': 0, 'Medio': 0, 'Alto': 0, 'Criminale': 0 };
+            data.forEach(d => { 
+                let val = DB_COLS.value ? (parseFloat(d[DB_COLS.value]) || 0) : 0;
+                let risk = DB_COLS.risk ? (d[DB_COLS.risk] || 'Medio') : 'Medio';
+                let status = DB_COLS.status ? (d[DB_COLS.status] || 'Attivo') : 'Attivo';
+                if(status === 'Attivo') counts[risk] = (counts[risk] || 0) + val 
+            });
+            if(riskChart) riskChart.destroy();
+            riskChart = new Chart(ctx, {
+                type: 'doughnut',
+                data: { labels: Object.keys(counts), datasets: [{ data: Object.values(counts), backgroundColor: ['#10b981', '#d69e2e', '#e53e3e', '#742a2a'], borderWidth: 0 }] },
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
+            });
+        }
+    </script>
+</body>
+</html>
