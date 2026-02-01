@@ -882,6 +882,37 @@
 
         // Utils
         function playSound(id) { document.getElementById('sfx-'+id)?.play().catch(()=>{}); }
+
+                // =========================
+        // INITIALIZATION
+        // =========================
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('Initializing Ink Corp Manager...');
+            
+            // Connect login button
+            const loginBtn = document.querySelector('button[onclick*="authLogin"], #login-btn, button:has-text("ACCEDI")');
+            if(loginBtn) {
+                loginBtn.onclick = function() {
+                    console.log('Login button clicked!');
+                    authLogin();
+                };
+                console.log('Login button connected:', loginBtn);
+            } else {
+                console.error('Login button not found!');
+            }
+            
+            // Connect register button
+            const regBtn = document.querySelector('button[onclick*="authRegister"], #register-btn');
+            if(regBtn) {
+                regBtn.onclick = function() {
+                    console.log('Register button clicked!');
+                    authRegister();
+                };
+                console.log('Register button connected');
+            }
+            
+            console.log('Initialization complete');
+        });
     </script>
 </body>
 </html>
