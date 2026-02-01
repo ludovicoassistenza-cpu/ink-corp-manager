@@ -235,24 +235,39 @@
             </div>
 
             <!-- Rival Widget -->
-            <div id="rival-widget" class="card-panel p-4 rounded bg-gradient-to-b from-slate-900 to-red-950/20 border-red-900/30 relative">
-                <div class="flex justify-between items-center mb-2">
-                    <h3 class="text-xs font-bold text-red-500 uppercase tracking-widest">Rivali: Iron Synd.</h3>
+            <div id="rival-widget" class="card-panel p-4 rounded bg-gradient-to-b from-slate-900 to-slate-950 border-slate-800 relative">
+                <div class="flex justify-between items-center mb-3 pb-2 border-b border-slate-800">
+                    <h3 class="text-xs font-bold text-slate-400 uppercase tracking-widest">Rivali Attivi</h3>
                     <span class="w-2 h-2 bg-red-500 rounded-full animate-pulse shadow-[0_0_8px_red]"></span>
                 </div>
-                <!-- Master click to edit area -->
-                <div onclick="editRivalManual()" class="w-full bg-slate-950 h-3 rounded-full overflow-hidden border border-red-900/50 mb-1 cursor-help" title="Master: Clicca per modificare">
-                    <div id="rival-bar" class="h-full bg-red-700 transition-all duration-1000 w-0 relative overflow-hidden">
-                        <div class="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/diagmonds-light.png')] opacity-30"></div>
+
+                <!-- TEAM B -->
+                <div class="mb-4 group">
+                    <div class="flex justify-between text-[10px] font-bold mb-1">
+                        <span class="text-red-400">TEAM B</span>
+                        <span id="rival-percent-b" class="text-red-400 font-mono">0%</span>
                     </div>
+                    <div onclick="editRivalManual('B')" class="w-full bg-slate-950 h-2 rounded-full overflow-hidden border border-red-900/30 mb-2 cursor-pointer hover:border-red-500/50 transition-colors" title="Master: Modifica Team B">
+                        <div id="rival-bar-b" class="h-full bg-red-700 transition-all duration-1000 w-0 relative shadow-[0_0_10px_rgba(185,28,28,0.5)]"></div>
+                    </div>
+                    <button onclick="sabotageRival('B')" class="sabotage-btn w-full py-1 bg-red-950/50 hover:bg-red-900/50 border border-red-900/50 text-red-400 text-[9px] font-bold uppercase rounded transition-colors hover:shadow-[0_0_10px_rgba(220,38,38,0.2)]">
+                        Sabota B (500gp)
+                    </button>
                 </div>
-                <div class="flex justify-between text-[10px] text-slate-500 mb-3 font-mono">
-                    <span>INFLUENZA</span>
-                    <span id="rival-percent">0%</span>
+
+                <!-- TEAM C -->
+                <div class="group">
+                    <div class="flex justify-between text-[10px] font-bold mb-1">
+                        <span class="text-orange-400">TEAM C</span>
+                        <span id="rival-percent-c" class="text-orange-400 font-mono">0%</span>
+                    </div>
+                    <div onclick="editRivalManual('C')" class="w-full bg-slate-950 h-2 rounded-full overflow-hidden border border-orange-900/30 mb-2 cursor-pointer hover:border-orange-500/50 transition-colors" title="Master: Modifica Team C">
+                        <div id="rival-bar-c" class="h-full bg-orange-700 transition-all duration-1000 w-0 relative shadow-[0_0_10px_rgba(194,65,12,0.5)]"></div>
+                    </div>
+                    <button onclick="sabotageRival('C')" class="sabotage-btn w-full py-1 bg-orange-950/50 hover:bg-orange-900/50 border border-orange-900/50 text-orange-400 text-[9px] font-bold uppercase rounded transition-colors hover:shadow-[0_0_10px_rgba(234,88,12,0.2)]">
+                        Sabota C (500gp)
+                    </button>
                 </div>
-                <button id="btn-sabotage" onclick="sabotageRival()" class="w-full py-2 bg-red-950 hover:bg-red-900 border border-red-900 text-red-400 text-xs font-bold uppercase rounded transition-colors">
-                    Sabotaggio (500gp)
-                </button>
             </div>
 
             <!-- Actions -->
@@ -426,7 +441,9 @@
         let dbCols = { name: 'name', value: 'current_value', roi: 'roi_rate', risk: 'risk_level', status: 'status', desc: 'description' };
         let globalData = [];
         let marketState = 'neutral';
-        let rivalProgress = parseInt(localStorage.getItem('inkCorp_rival') || "15");
+        // RIVALS STATE
+        let rivalProgressB = parseInt(localStorage.getItem('inkCorp_rival_b') || "15");
+        let rivalProgressC = parseInt(localStorage.getItem('inkCorp_rival_c') || "5");
 
         // --- AUTH FUNCTIONS ---
 
@@ -437,6 +454,7 @@
 
             if(!user || !pass) { msg.innerText = "Inserire credenziali."; msg.className = "text-center text-xs font-mono mt-4 text-red-500"; return; }
 
+            // Init Supabase for Auth Check
             if(!client) client = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
             try {
@@ -444,6 +462,7 @@
                 
                 if (error || !data) throw new Error("Credenziali invalide.");
 
+                // Login Success
                 currentUser = data;
                 document.getElementById('login-screen').classList.add('hidden');
                 document.getElementById('display-user').innerText = currentUser.username;
@@ -494,9 +513,11 @@
             if(!client) client = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
             try {
+                // Check if user exists
                 const { data: exists } = await client.from('users').select('id').eq('username', user);
                 if (exists && exists.length > 0) throw new Error("Nome utente già in uso.");
 
+                // Create User (Default Role 2: Agente)
                 const { error } = await client.from('users').insert([{
                     username: user,
                     password: pass,
@@ -524,16 +545,23 @@
         function applyPermissions() {
             const level = currentUser.role_level;
             
+            // Level 1: View Only
             if (level < 2) {
                 document.getElementById('btn-create').classList.add('opacity-50', 'pointer-events-none');
                 document.getElementById('btn-sim').classList.add('opacity-50', 'pointer-events-none');
-                document.getElementById('btn-sabotage').classList.add('opacity-50', 'pointer-events-none');
+                // Disable all sabotage buttons
+                document.querySelectorAll('.sabotage-btn').forEach(btn => {
+                    btn.classList.add('opacity-50', 'pointer-events-none');
+                });
             }
+            // Level 3: Director
             if (level < 3) {
-                document.getElementById('admin-lock').classList.remove('hidden'); 
+                document.getElementById('admin-lock').classList.remove('hidden'); // Locks scenario
+                // Hide dangerous buttons in Edit Modal (handled in openEditModal)
             } else {
                 document.getElementById('admin-lock').classList.add('hidden');
             }
+            // Level 4: Master Permissions UI
             if (level === 4) {
                 document.getElementById('master-panel').classList.remove('hidden');
                 document.getElementById('capital-container').classList.add('cursor-pointer', 'hover:bg-slate-900');
@@ -544,34 +572,36 @@
         async function initSystem() {
             const loader = document.getElementById('loader-container');
             loader.classList.remove('hidden');
-            updateRivalBar();
+            updateRivalBar(); // Initial draw
             
             try {
-                if(!client) client = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-
+                // 1. Fetch Assets
                 const { data, error } = await client.from('investments').select('*').order('id', { ascending: true });
-                if (error && error.code !== 'PGRST103') throw error; 
+                if (error && error.code !== 'PGRST103') throw error; // Ignore 103 (Range Not Satisfiable) if empty table
 
                 if (data && data.length > 0) autoMapColumns(data[0]);
-                globalData = data || []; 
+                globalData = data || []; // Populate globalData
                 renderDashboard(globalData);
                 updateChart(globalData);
 
+                // 2. Fetch Logs
                 refreshLogs();
 
+                // 3. Start Auto-Refresh Interval (every 10s)
                 if (!window.refreshInterval) {
                     window.refreshInterval = setInterval(refreshLogs, 10000);
                 }
 
             } catch (err) {
                 console.error(err);
-                logAction("Errore init: " + err.message, "error");
+                // Silent error in logs if possible, else console
             }
             loader.classList.add('hidden');
         }
 
         async function refreshLogs() {
             if(!client) return;
+            // Fetch last 20 logs
             const { data: logs, error } = await client
                 .from('audit_logs')
                 .select('*')
@@ -580,7 +610,7 @@
             
             if(!error && logs) {
                 const logContainer = document.getElementById('activity-log');
-                logContainer.innerHTML = ''; 
+                logContainer.innerHTML = ''; // Clear current
                 logs.forEach(log => {
                     const div = document.createElement('div');
                     let color = "text-slate-400";
@@ -591,19 +621,20 @@
                     const time = new Date(log.created_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
                     div.className = `${color} border-l-2 border-slate-800 pl-2 text-[10px]`;
                     div.innerHTML = `<span class="opacity-50">[${time}]</span> <span class="font-bold text-slate-300">${log.username}:</span> ${log.action}`;
-                    logContainer.appendChild(div); 
+                    logContainer.appendChild(div); // Since flex-col-reverse, append puts it at bottom visually? No, DOM order.
                 });
             }
         }
 
         async function logAction(text, type='info') {
+            // 1. Send to DB
             if(currentUser && client) {
                 await client.from('audit_logs').insert([{
                     username: currentUser.username,
                     action: text,
                     type: type
                 }]);
-                refreshLogs(); 
+                refreshLogs(); // Refresh UI immediately
             }
         }
 
@@ -637,7 +668,7 @@
             let cap = 0; let div = 0; let mult = getMarketMultiplier(); let html = '';
 
             data.forEach(item => {
-                let val = parseFloat(item[dbCols.value]) || 0;
+                let val = parseInt(item[dbCols.value], 10) || 0;
                 let roi = parseFloat(item[dbCols.roi]) || 0;
                 let status = item[dbCols.status] || 'Attivo';
                 let name = item[dbCols.name] || 'Asset';
@@ -650,7 +681,9 @@
                 let border = status === 'Attivo' ? 'border-emerald-800' : (status === 'In attesa' ? 'border-amber-800' : 'border-red-900');
                 let text = status === 'Attivo' ? 'text-emerald-500' : (status === 'In attesa' ? 'text-amber-500' : 'text-red-500');
 
+                // Safe object passing
                 const id = item.id; 
+                // We store data in a global map or fetch by ID, passing ID is safer than object string
                 
                 html += `
                 <div class="card-panel p-4 rounded flex flex-col ${border} relative overflow-hidden group">
@@ -676,31 +709,27 @@
 
         async function createNewAsset(e) {
             e.preventDefault();
-            if(currentUser.role_level < 2) return alert("Livello insufficiente!");
+            if(currentUser.role_level < 2) return;
 
             const newItem = {};
-            // Using standard SQL column names as default fallback
-            newItem[dbCols.name || 'name'] = document.getElementById('new-name').value;
-            newItem[dbCols.desc || 'description'] = document.getElementById('new-desc').value;
-            newItem[dbCols.value || 'current_value'] = parseInt(document.getElementById('new-value').value, 10) || 0;
-            newItem[dbCols.roi || 'roi_rate'] = parseFloat(document.getElementById('new-roi').value) || 0;
-            newItem[dbCols.risk || 'risk_level'] = document.getElementById('new-risk').value;
-            newItem[dbCols.status || 'status'] = 'Attivo';
+            newItem[dbCols.name] = document.getElementById('new-name').value;
+            newItem[dbCols.desc] = document.getElementById('new-desc').value;
+            newItem[dbCols.value] = parseInt(document.getElementById('new-value').value, 10) || 0;
+            newItem[dbCols.roi] = parseFloat(document.getElementById('new-roi').value) || 0;
+            newItem[dbCols.risk] = document.getElementById('new-risk').value;
+            newItem[dbCols.status] = 'Attivo';
 
             try {
                 const { error } = await client.from('investments').insert([newItem]);
                 if(error) throw error;
                 closeModal('create-modal');
-                logAction(`Nuova impresa fondata: ${newItem[dbCols.name||'name']}`, 'success');
+                logAction(`Nuova impresa fondata: ${newItem[dbCols.name]}`, 'success');
                 initSystem();
-            } catch(err) { 
-                alert("ERRORE CREAZIONE: " + err.message);
-                console.error(err);
-            }
+            } catch(err) { alert(err.message); }
         }
 
         async function saveChanges() {
-            if(currentUser.role_level < 3) return; 
+            if(currentUser.role_level < 3) return; // Security Check
             const id = document.getElementById('edit-id').value;
             const updates = {};
             updates[dbCols.name] = document.getElementById('edit-name').value;
@@ -771,8 +800,7 @@
             const newVal = Math.floor((parseInt(target[dbCols.value], 10)||0) * mult);
             let up = {}; up[dbCols.value] = newVal;
             
-            const { error } = await client.from('investments').update(up).eq('id', target.id);
-            if(error) { alert("Errore Simulazione: " + error.message); return; }
+            await client.from('investments').update(up).eq('id', target.id);
             logAction(msg, type);
             initSystem();
         }
@@ -881,10 +909,20 @@
             }
         }
 
-        function editRivalManual() {
+        function editRivalManual(team) {
             if(currentUser.role_level !== 4) return;
-            let val = prompt("Set Rival Influence % (0-100):", rivalProgress);
-            if(val !== null) forceRival(parseInt(val));
+            let currentVal = team === 'B' ? rivalProgressB : rivalProgressC;
+            let val = prompt(`Imposta Influenza Team ${team} % (0-100):`, currentVal);
+            if(val !== null) {
+                val = parseInt(val);
+                if (!isNaN(val)) {
+                    val = Math.min(100, Math.max(0, val));
+                    if(team === 'B') rivalProgressB = val;
+                    if(team === 'C') rivalProgressC = val;
+                    updateRivalBar();
+                    logAction(`Master ha modificato Team ${team} a ${val}%`, "warn");
+                }
+            }
         }
 
         function openEditModal(id) {
@@ -923,15 +961,63 @@
             renderDashboard(globalData);
         }
         function getMarketMultiplier() { return marketState === 'boom' ? 1.5 : (marketState === 'crisis' ? 0.5 : (marketState === 'war' ? 1.2 : 1.0)); }
-        function updateRivalBar() { document.getElementById('rival-bar').style.width = rivalProgress + "%"; document.getElementById('rival-percent').innerText = rivalProgress + "%"; }
+        
+        // RIVALS LOGIC
+        function updateRivalBar() { 
+            // Update UI
+            const barB = document.getElementById('rival-bar-b');
+            const txtB = document.getElementById('rival-percent-b');
+            if(barB && txtB) {
+                barB.style.width = rivalProgressB + "%";
+                txtB.innerText = rivalProgressB + "%";
+            }
+
+            const barC = document.getElementById('rival-bar-c');
+            const txtC = document.getElementById('rival-percent-c');
+            if(barC && txtC) {
+                barC.style.width = rivalProgressC + "%";
+                txtC.innerText = rivalProgressC + "%";
+            }
+
+            // Save State
+            localStorage.setItem('inkCorp_rival_b', rivalProgressB);
+            localStorage.setItem('inkCorp_rival_c', rivalProgressC);
+        }
+
         function forceRival(val) { 
-            rivalProgress = Math.min(100, Math.max(0, val || 0)); 
-            localStorage.setItem('inkCorp_rival', rivalProgress); 
+            // Master Reset or Force
+            rivalProgressB = Math.min(100, Math.max(0, val || 0)); 
+            rivalProgressC = Math.min(100, Math.max(0, val || 0)); 
             updateRivalBar(); 
-            logAction("Influenza rivale forzata a " + val + "%", "warn"); 
+            logAction("Influenza di TUTTI i rivali forzata a " + val + "%", "warn"); 
+        }
+
+        function editRivalManual(team) {
+            if(currentUser.role_level !== 4) return;
+            let currentVal = team === 'B' ? rivalProgressB : rivalProgressC;
+            let val = prompt(`Imposta Influenza Team ${team} % (0-100):`, currentVal);
+            if(val !== null) {
+                val = parseInt(val);
+                if (!isNaN(val)) {
+                    val = Math.min(100, Math.max(0, val));
+                    if(team === 'B') rivalProgressB = val;
+                    if(team === 'C') rivalProgressC = val;
+                    updateRivalBar();
+                    logAction(`Master ha modificato Team ${team} a ${val}%`, "warn");
+                }
+            }
         }
         
-        function sabotageRival() { if(currentUser.role_level >= 2 && confirm("Spendere 500gp?")) { rivalProgress = Math.max(0, rivalProgress - 20); updateRivalBar(); logAction("Sabotaggio effettuato", "success"); playSound('sfx-upgrade'); } }
+        function sabotageRival(team) { 
+            if(currentUser.role_level >= 2 && confirm(`Spendere 500gp per sabotare Team ${team}?`)) { 
+                if(team === 'B') rivalProgressB = Math.max(0, rivalProgressB - 20);
+                if(team === 'C') rivalProgressC = Math.max(0, rivalProgressC - 20);
+                updateRivalBar(); 
+                logAction(`Sabotaggio Team ${team} completato`, "success"); 
+                playSound('sfx-upgrade'); 
+            } 
+        }
+
         function updateChart(data) {
             const ctx = document.getElementById('riskChart').getContext('2d');
             const counts = { 'Basso': 0, 'Medio': 0, 'Alto': 0, 'Criminale': 0 };
