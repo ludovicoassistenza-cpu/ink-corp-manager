@@ -441,7 +441,6 @@
         let dbCols = { name: 'name', value: 'current_value', roi: 'roi_rate', risk: 'risk_level', status: 'status', desc: 'description' };
         let globalData = [];
         let marketState = 'neutral';
-        // RIVALS STATE
         let rivalProgressB = parseInt(localStorage.getItem('inkCorp_rival_b') || "15");
         let rivalProgressC = parseInt(localStorage.getItem('inkCorp_rival_c') || "5");
 
@@ -763,6 +762,21 @@
             }
         }
 
+        async function deleteUser(uid, username) {
+            if(!confirm(`⚠️ ATTENZIONE ⚠️\n\nStai per eliminare definitivamente l'utente "${username}".\nQuesta azione è irreversibile.\n\nProcedere?`)) return;
+            
+            try {
+                const { error } = await client.from('users').delete().eq('id', uid);
+                if (error) throw error;
+                
+                logAction(`Utente ${username} eliminato dal sistema.`, 'warn');
+                playSound('sfx-alarm');
+                openUserManager(); // Refresh list
+            } catch (err) {
+                alert("Errore eliminazione: " + err.message);
+            }
+        }
+
         async function buyUpgrade(type) {
             if(currentUser.role_level < 2) return;
             const id = document.getElementById('edit-id').value;
@@ -836,11 +850,12 @@
                         <span class="font-bold text-sm ${roleColor}">${u.username}</span>
                         <span class="text-[10px] block text-slate-500">${roleLabel} (Lv.${u.role_level})</span>
                     </div>
-                    <div class="flex gap-1">
+                    <div class="flex gap-1 items-center">
                         ${u.role_level < 4 ? `
-                        <button onclick="changeUserRole('${u.id}', ${u.role_level + 1})" class="px-2 py-1 bg-emerald-900 text-emerald-400 text-[10px] rounded hover:bg-emerald-800">▲</button>
-                        <button onclick="changeUserRole('${u.id}', ${u.role_level - 1})" class="px-2 py-1 bg-red-900 text-red-400 text-[10px] rounded hover:bg-red-800">▼</button>
-                        ` : '<span class="text-[10px] text-slate-600">IMMUNE</span>'}
+                        <button onclick="changeUserRole('${u.id}', ${u.role_level + 1})" class="px-2 py-1 bg-emerald-900 text-emerald-400 text-[10px] rounded hover:bg-emerald-800" title="Promuovi">▲</button>
+                        <button onclick="changeUserRole('${u.id}', ${u.role_level - 1})" class="px-2 py-1 bg-amber-900 text-amber-400 text-[10px] rounded hover:bg-amber-800" title="Degrada">▼</button>
+                        <button onclick="deleteUser('${u.id}', '${u.username}')" class="px-2 py-1 bg-red-950 text-red-500 text-[10px] rounded hover:bg-red-900 border border-red-900" title="Elimina Utente">✕</button>
+                        ` : '<span class="text-[10px] text-slate-600 font-bold tracking-wider">IMMUNE</span>'}
                     </div>
                 `;
                 list.appendChild(div);
@@ -910,121 +925,4 @@
         }
 
         function editRivalManual(team) {
-            if(currentUser.role_level !== 4) return;
-            let currentVal = team === 'B' ? rivalProgressB : rivalProgressC;
-            let val = prompt(`Imposta Influenza Team ${team} % (0-100):`, currentVal);
-            if(val !== null) {
-                val = parseInt(val);
-                if (!isNaN(val)) {
-                    val = Math.min(100, Math.max(0, val));
-                    if(team === 'B') rivalProgressB = val;
-                    if(team === 'C') rivalProgressC = val;
-                    updateRivalBar();
-                    logAction(`Master ha modificato Team ${team} a ${val}%`, "warn");
-                }
-            }
-        }
-
-        function openEditModal(id) {
-            playSound('sfx-click');
-            const item = globalData.find(i => i.id == id);
-            if(!item) return;
-            
-            document.getElementById('edit-id').value = item.id;
-            document.getElementById('edit-name').value = item[dbCols.name];
-            document.getElementById('edit-value').value = item[dbCols.value];
-            document.getElementById('edit-roi').value = item[dbCols.roi];
-            document.getElementById('edit-status').value = item[dbCols.status];
-            document.getElementById('edit-desc').value = item[dbCols.desc];
-
-            // Permissions Check
-            if(currentUser.role_level < 3) {
-                document.getElementById('edit-actions').classList.add('hidden');
-                document.getElementById('view-only-msg').classList.remove('hidden');
-                document.getElementById('upgrade-list').classList.add('pointer-events-none', 'opacity-50');
-            } else {
-                document.getElementById('edit-actions').classList.remove('hidden');
-                document.getElementById('view-only-msg').classList.add('hidden');
-                document.getElementById('upgrade-list').classList.remove('pointer-events-none', 'opacity-50');
-            }
-
-            document.getElementById('edit-modal').classList.remove('hidden');
-        }
-
-        // Utils
-        function openCreateModal() { if(currentUser.role_level >= 2) { playSound('sfx-click'); document.getElementById('create-modal').classList.remove('hidden'); } }
-        function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
-        function changeWorldState() { 
-            if(currentUser.role_level < 3) { document.getElementById('world-state').value = marketState; return alert("Richiede autorizzazione Direttore."); }
-            marketState = document.getElementById('world-state').value;
-            logAction(`Scenario cambiato: ${marketState.toUpperCase()}`, 'warn');
-            renderDashboard(globalData);
-        }
-        function getMarketMultiplier() { return marketState === 'boom' ? 1.5 : (marketState === 'crisis' ? 0.5 : (marketState === 'war' ? 1.2 : 1.0)); }
-        
-        // RIVALS LOGIC
-        function updateRivalBar() { 
-            // Update UI
-            const barB = document.getElementById('rival-bar-b');
-            const txtB = document.getElementById('rival-percent-b');
-            if(barB && txtB) {
-                barB.style.width = rivalProgressB + "%";
-                txtB.innerText = rivalProgressB + "%";
-            }
-
-            const barC = document.getElementById('rival-bar-c');
-            const txtC = document.getElementById('rival-percent-c');
-            if(barC && txtC) {
-                barC.style.width = rivalProgressC + "%";
-                txtC.innerText = rivalProgressC + "%";
-            }
-
-            // Save State
-            localStorage.setItem('inkCorp_rival_b', rivalProgressB);
-            localStorage.setItem('inkCorp_rival_c', rivalProgressC);
-        }
-
-        function forceRival(val) { 
-            // Master Reset or Force
-            rivalProgressB = Math.min(100, Math.max(0, val || 0)); 
-            rivalProgressC = Math.min(100, Math.max(0, val || 0)); 
-            updateRivalBar(); 
-            logAction("Influenza di TUTTI i rivali forzata a " + val + "%", "warn"); 
-        }
-
-        function editRivalManual(team) {
-            if(currentUser.role_level !== 4) return;
-            let currentVal = team === 'B' ? rivalProgressB : rivalProgressC;
-            let val = prompt(`Imposta Influenza Team ${team} % (0-100):`, currentVal);
-            if(val !== null) {
-                val = parseInt(val);
-                if (!isNaN(val)) {
-                    val = Math.min(100, Math.max(0, val));
-                    if(team === 'B') rivalProgressB = val;
-                    if(team === 'C') rivalProgressC = val;
-                    updateRivalBar();
-                    logAction(`Master ha modificato Team ${team} a ${val}%`, "warn");
-                }
-            }
-        }
-        
-        function sabotageRival(team) { 
-            if(currentUser.role_level >= 2 && confirm(`Spendere 500gp per sabotare Team ${team}?`)) { 
-                if(team === 'B') rivalProgressB = Math.max(0, rivalProgressB - 20);
-                if(team === 'C') rivalProgressC = Math.max(0, rivalProgressC - 20);
-                updateRivalBar(); 
-                logAction(`Sabotaggio Team ${team} completato`, "success"); 
-                playSound('sfx-upgrade'); 
-            } 
-        }
-
-        function updateChart(data) {
-            const ctx = document.getElementById('riskChart').getContext('2d');
-            const counts = { 'Basso': 0, 'Medio': 0, 'Alto': 0, 'Criminale': 0 };
-            data.forEach(d => { if(d[dbCols.status] === 'Attivo') counts[d[dbCols.risk]||'Medio'] = (counts[d[dbCols.risk]||'Medio']||0) + (parseFloat(d[dbCols.value])||0); });
-            if(window.myChart) window.myChart.destroy();
-            window.myChart = new Chart(ctx, { type: 'doughnut', data: { labels: Object.keys(counts), datasets: [{ data: Object.values(counts), backgroundColor: ['#10b981', '#d97706', '#ef4444', '#7f1d1d'], borderWidth: 0 }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } } });
-        }
-    </script>
-</body>
-</html>
+            if(currentUser.role_level !== 4
