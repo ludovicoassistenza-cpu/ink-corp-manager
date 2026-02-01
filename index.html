@@ -52,6 +52,16 @@
             box-shadow: 0 0 15px rgba(217, 119, 6, 0.1);
         }
 
+        /* MASTER CONTROLS HIGHLIGHT */
+        .master-control {
+            border-color: #7c3aed !important; /* Purple */
+            box-shadow: 0 0 10px rgba(124, 58, 237, 0.2);
+        }
+        .master-control:hover {
+            box-shadow: 0 0 20px rgba(124, 58, 237, 0.4);
+            cursor: pointer;
+        }
+
         /* SCROLLBAR */
         ::-webkit-scrollbar { width: 6px; }
         ::-webkit-scrollbar-track { background: #020617; }
@@ -81,7 +91,6 @@
     <audio id="sfx-coin" src="https://assets.mixkit.co/active_storage/sfx/2003/2003-preview.mp3"></audio>
     <audio id="sfx-alarm" src="https://assets.mixkit.co/active_storage/sfx/995/995-preview.mp3"></audio>
     <audio id="sfx-upgrade" src="https://assets.mixkit.co/active_storage/sfx/2578/2578-preview.mp3"></audio>
-    <audio id="sfx-type" src="https://assets.mixkit.co/active_storage/sfx/2357/2357-preview.mp3"></audio>
     <audio id="sfx-access" src="https://assets.mixkit.co/active_storage/sfx/1132/1132-preview.mp3"></audio>
     <audio id="sfx-denied" src="https://assets.mixkit.co/active_storage/sfx/2953/2953-preview.mp3"></audio>
 
@@ -94,15 +103,21 @@
                     <span class="text-4xl text-amber-500 fantasy-title font-bold">IC</span>
                 </div>
                 <h1 class="fantasy-title text-3xl text-amber-500 tracking-widest">INK CORP.</h1>
-                <p class="text-xs text-slate-500 uppercase tracking-[0.4em] mt-1">Terminal Access v6.0</p>
+                <p class="text-xs text-slate-500 uppercase tracking-[0.4em] mt-1">Terminal Access v7.0 (GM Override)</p>
             </div>
 
             <!-- Login Form -->
             <div id="form-login" class="space-y-4">
-                <input type="text" id="login-user" class="w-full bg-slate-950 border border-slate-700 text-slate-200 px-4 py-3 rounded outline-none focus:border-amber-600 transition-colors" placeholder="Nome Profilo (PG)">
-                <input type="password" id="login-pass" class="w-full bg-slate-950 border border-slate-700 text-slate-200 px-4 py-3 rounded outline-none focus:border-amber-600 transition-colors" placeholder="Password">
+                <div>
+                    <label class="block text-[10px] uppercase text-slate-500 font-bold mb-1">Identificativo (PG)</label>
+                    <input type="text" id="login-user" class="w-full bg-slate-950 border border-slate-700 text-slate-200 px-4 py-3 rounded outline-none focus:border-amber-600 transition-colors" placeholder="Nome Profilo">
+                </div>
+                <div>
+                    <label class="block text-[10px] uppercase text-slate-500 font-bold mb-1">Chiave d'Accesso</label>
+                    <input type="password" id="login-pass" class="w-full bg-slate-950 border border-slate-700 text-slate-200 px-4 py-3 rounded outline-none focus:border-amber-600 transition-colors" placeholder="Password">
+                </div>
                 
-                <button onclick="attemptLogin()" class="w-full bg-amber-700 hover:bg-amber-600 text-white font-bold py-3 rounded uppercase tracking-wider transition-all shadow-lg hover:shadow-amber-900/50">
+                <button onclick="attemptLogin()" class="w-full bg-amber-700 hover:bg-amber-600 text-white font-bold py-3 rounded uppercase tracking-wider transition-all shadow-lg hover:shadow-amber-900/50 mt-2">
                     Accedi al Sistema
                 </button>
                 
@@ -118,14 +133,23 @@
                 <div class="bg-emerald-900/20 p-3 rounded border border-emerald-800 text-xs text-emerald-400 mb-4 text-center">
                     Inserisci il Codice Reclutamento fornito dal Master per inizializzare il tuo profilo.
                 </div>
-                <input type="password" id="reg-code" class="w-full bg-slate-950 border border-emerald-800 text-emerald-400 px-4 py-3 rounded outline-none focus:border-emerald-500 text-center font-mono uppercase tracking-widest" placeholder="CODICE STANDARD">
+                <div>
+                    <label class="block text-[10px] uppercase text-emerald-700 font-bold mb-1 text-center">Codice Reclutamento</label>
+                    <input type="password" id="reg-code" class="w-full bg-slate-950 border border-emerald-800 text-emerald-400 px-4 py-3 rounded outline-none focus:border-emerald-500 text-center font-mono uppercase tracking-widest" placeholder="CODICE STANDARD">
+                </div>
                 
                 <div class="h-px bg-slate-800 my-4"></div>
                 
-                <input type="text" id="reg-user" class="w-full bg-slate-950 border border-slate-700 text-slate-200 px-4 py-2 rounded outline-none focus:border-emerald-500" placeholder="Nome del tuo PG">
-                <input type="password" id="reg-pass" class="w-full bg-slate-950 border border-slate-700 text-slate-200 px-4 py-2 rounded outline-none focus:border-emerald-500" placeholder="Scegli Password Personale">
+                <div>
+                    <label class="block text-[10px] uppercase text-slate-500 font-bold mb-1">Nome in Codice (PG)</label>
+                    <input type="text" id="reg-user" class="w-full bg-slate-950 border border-slate-700 text-slate-200 px-4 py-2 rounded outline-none focus:border-emerald-500" placeholder="Nome del tuo PG">
+                </div>
+                <div>
+                    <label class="block text-[10px] uppercase text-slate-500 font-bold mb-1">Imposta Password</label>
+                    <input type="password" id="reg-pass" class="w-full bg-slate-950 border border-slate-700 text-slate-200 px-4 py-2 rounded outline-none focus:border-emerald-500" placeholder="Scegli Password Personale">
+                </div>
                 
-                <button onclick="attemptRegister()" class="w-full bg-emerald-800 hover:bg-emerald-700 text-white font-bold py-3 rounded uppercase tracking-wider transition-all shadow-lg">
+                <button onclick="attemptRegister()" class="w-full bg-emerald-800 hover:bg-emerald-700 text-white font-bold py-3 rounded uppercase tracking-wider transition-all shadow-lg mt-2">
                     Crea Profilo
                 </button>
                 
@@ -174,8 +198,11 @@
 
                 <!-- Money -->
                 <div class="bg-slate-950 rounded border border-slate-800 flex overflow-hidden shadow-inner">
-                    <div class="px-4 py-2 border-r border-slate-800">
-                        <div class="text-[9px] text-slate-500 uppercase font-bold">Capitale</div>
+                    <div id="capital-container" class="px-4 py-2 border-r border-slate-800 transition-colors relative group" onclick="editCapital()">
+                        <div class="text-[9px] text-slate-500 uppercase font-bold flex items-center gap-1">
+                            Capitale
+                            <span id="capital-edit-icon" class="hidden text-amber-500 text-[8px] animate-pulse">✎</span>
+                        </div>
                         <div id="total-capital" class="text-emerald-500 tech-font text-lg">---</div>
                     </div>
                     <div class="px-4 py-2 hover:bg-slate-900 cursor-pointer transition-colors" onclick="collectDividends()" title="Incassa Utili">
@@ -194,13 +221,27 @@
         <!-- LEFT SIDEBAR -->
         <div class="col-span-12 md:col-span-3 flex flex-col gap-4 overflow-y-auto pb-4">
             
+            <!-- MASTER CONTROL PANEL (Hidden by default) -->
+            <div id="master-panel" class="hidden card-panel p-4 rounded bg-slate-950 border-purple-900 shadow-[0_0_20px_rgba(147,51,234,0.1)]">
+                <div class="flex justify-between items-center mb-2 border-b border-purple-900 pb-2">
+                    <h3 class="text-xs font-bold text-purple-500 uppercase">⚡ GRAN MASTER</h3>
+                </div>
+                <div class="space-y-2">
+                    <button onclick="openUserManager()" class="w-full py-2 bg-purple-900/30 hover:bg-purple-900/50 border border-purple-800 text-purple-300 text-[10px] font-bold uppercase rounded flex items-center justify-center gap-2">
+                        <span>👥</span> Gestione Utenti
+                    </button>
+                    <button onclick="forceRival(0)" class="w-full py-1 bg-slate-900 hover:bg-slate-800 border border-purple-900/50 text-slate-400 text-[10px] uppercase rounded">Reset Rivali (0%)</button>
+                </div>
+            </div>
+
             <!-- Rival Widget -->
-            <div class="card-panel p-4 rounded bg-gradient-to-b from-slate-900 to-red-950/20 border-red-900/30">
+            <div id="rival-widget" class="card-panel p-4 rounded bg-gradient-to-b from-slate-900 to-red-950/20 border-red-900/30 relative">
                 <div class="flex justify-between items-center mb-2">
                     <h3 class="text-xs font-bold text-red-500 uppercase tracking-widest">Rivali: Iron Synd.</h3>
                     <span class="w-2 h-2 bg-red-500 rounded-full animate-pulse shadow-[0_0_8px_red]"></span>
                 </div>
-                <div class="w-full bg-slate-950 h-3 rounded-full overflow-hidden border border-red-900/50 mb-1">
+                <!-- Master click to edit area -->
+                <div onclick="editRivalManual()" class="w-full bg-slate-950 h-3 rounded-full overflow-hidden border border-red-900/50 mb-1 cursor-help" title="Master: Clicca per modificare">
                     <div id="rival-bar" class="h-full bg-red-700 transition-all duration-1000 w-0 relative overflow-hidden">
                         <div class="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/diagmonds-light.png')] opacity-30"></div>
                     </div>
@@ -323,18 +364,33 @@
         <div class="bg-slate-900 border border-emerald-800 w-full max-w-md rounded-lg shadow-2xl p-6">
             <h3 class="fantasy-title text-xl text-emerald-500 mb-4">Nuova Impresa</h3>
             <form onsubmit="createNewAsset(event)" class="space-y-4">
-                <input type="text" id="new-name" required class="w-full bg-slate-800 border border-slate-600 rounded p-2 text-white outline-none focus:border-emerald-500" placeholder="Nome Attività">
-                <textarea id="new-desc" class="w-full bg-slate-800 border border-slate-600 rounded p-2 text-slate-300 text-sm outline-none focus:border-emerald-500" placeholder="Descrizione..."></textarea>
-                <div class="grid grid-cols-2 gap-4">
-                    <input type="number" id="new-value" required class="w-full bg-slate-800 border border-slate-600 rounded p-2 text-white font-mono focus:border-emerald-500" placeholder="Costo GP">
-                    <input type="number" step="0.1" id="new-roi" required class="w-full bg-slate-800 border border-slate-600 rounded p-2 text-white font-mono focus:border-emerald-500" value="5.0" placeholder="ROI %">
+                <div>
+                    <label class="block text-[10px] uppercase text-slate-500 font-bold mb-1">Nome Impresa</label>
+                    <input type="text" id="new-name" required class="w-full bg-slate-800 border border-slate-600 rounded p-2 text-white outline-none focus:border-emerald-500" placeholder="Nome Attività">
                 </div>
-                <select id="new-risk" class="w-full bg-slate-800 border border-slate-600 rounded p-2 text-white outline-none cursor-pointer">
-                    <option value="Basso">Rischio Basso</option>
-                    <option value="Medio" selected>Rischio Medio</option>
-                    <option value="Alto">Rischio Alto</option>
-                    <option value="Criminale">Criminale</option>
-                </select>
+                <div>
+                    <label class="block text-[10px] uppercase text-slate-500 font-bold mb-1">Descrizione Attività</label>
+                    <textarea id="new-desc" class="w-full bg-slate-800 border border-slate-600 rounded p-2 text-slate-300 text-sm outline-none focus:border-emerald-500" placeholder="Descrizione..."></textarea>
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-[10px] uppercase text-slate-500 font-bold mb-1">Capitale Iniziale (GP)</label>
+                        <input type="number" id="new-value" required class="w-full bg-slate-800 border border-slate-600 rounded p-2 text-white font-mono focus:border-emerald-500" placeholder="Costo GP">
+                    </div>
+                    <div>
+                        <label class="block text-[10px] uppercase text-slate-500 font-bold mb-1">ROI Previsto (%)</label>
+                        <input type="number" step="0.1" id="new-roi" required class="w-full bg-slate-800 border border-slate-600 rounded p-2 text-white font-mono focus:border-emerald-500" value="5.0" placeholder="ROI %">
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-[10px] uppercase text-slate-500 font-bold mb-1">Livello di Rischio</label>
+                    <select id="new-risk" class="w-full bg-slate-800 border border-slate-600 rounded p-2 text-white outline-none cursor-pointer">
+                        <option value="Basso">Rischio Basso</option>
+                        <option value="Medio" selected>Rischio Medio</option>
+                        <option value="Alto">Rischio Alto</option>
+                        <option value="Criminale">Criminale</option>
+                    </select>
+                </div>
                 <div class="flex gap-4 pt-2">
                     <button type="button" onclick="closeModal('create-modal')" class="flex-1 py-2 border border-slate-600 text-slate-400 rounded hover:bg-slate-800">Annulla</button>
                     <button type="submit" class="flex-1 py-2 bg-emerald-800 hover:bg-emerald-600 text-white font-bold rounded shadow-lg">Firma</button>
@@ -343,16 +399,32 @@
         </div>
     </div>
 
+    <!-- MODAL USER MANAGER (MASTER ONLY) -->
+    <div id="user-manager-modal" class="fixed inset-0 z-50 hidden bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="bg-slate-900 border border-purple-800 w-full max-w-lg rounded-lg shadow-2xl p-6">
+            <h3 class="fantasy-title text-xl text-purple-500 mb-4">Gestione Personale (Master)</h3>
+            <div class="space-y-2 max-h-64 overflow-y-auto mb-4" id="user-list">
+                <!-- User list loaded here -->
+                <div class="text-center text-slate-500 italic">Caricamento utenti...</div>
+            </div>
+            <div class="flex justify-end">
+                <button onclick="closeModal('user-manager-modal')" class="px-4 py-2 border border-slate-600 text-slate-400 rounded hover:bg-slate-800">Chiudi</button>
+            </div>
+        </div>
+    </div>
+
     <!-- LOGIC -->
     <script>
         const SUPABASE_URL = 'https://mazammutcogkxhugfwqm.supabase.co';
         // !!! INSERISCI LA TUA CHIAVE QUI SOTTO !!!
         const SUPABASE_KEY = 'sb_publishable_fS4-JH4DgkckbiDbaxMLKQ_nZwiUpFp'; 
-        const RECRUIT_CODE = "INK2025"; // Codice segreto per creare nuovi PG
+        const RECRUIT_CODE = "INK2025"; 
 
         let client;
-        let currentUser = null; // { username, role_level }
+        let currentUser = null; 
+        // DEFAULT FALLBACKS TO PREVENT CRASHES ON EMPTY DB
         let dbCols = { name: 'name', value: 'current_value', roi: 'roi_rate', risk: 'risk_level', status: 'status', desc: 'description' };
+        let globalData = [];
         let marketState = 'neutral';
         let rivalProgress = parseInt(localStorage.getItem('inkCorp_rival') || "15");
 
@@ -365,7 +437,6 @@
 
             if(!user || !pass) { msg.innerText = "Inserire credenziali."; msg.className = "text-center text-xs font-mono mt-4 text-red-500"; return; }
 
-            // Init Supabase for Auth Check
             if(!client) client = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
             try {
@@ -373,7 +444,6 @@
                 
                 if (error || !data) throw new Error("Credenziali invalide.");
 
-                // Login Success
                 currentUser = data;
                 document.getElementById('login-screen').classList.add('hidden');
                 document.getElementById('display-user').innerText = currentUser.username;
@@ -424,11 +494,9 @@
             if(!client) client = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
             try {
-                // Check if user exists
                 const { data: exists } = await client.from('users').select('id').eq('username', user);
                 if (exists && exists.length > 0) throw new Error("Nome utente già in uso.");
 
-                // Create User (Default Role 2: Agente)
                 const { error } = await client.from('users').insert([{
                     username: user,
                     password: pass,
@@ -456,18 +524,20 @@
         function applyPermissions() {
             const level = currentUser.role_level;
             
-            // Level 1: View Only
             if (level < 2) {
                 document.getElementById('btn-create').classList.add('opacity-50', 'pointer-events-none');
                 document.getElementById('btn-sim').classList.add('opacity-50', 'pointer-events-none');
                 document.getElementById('btn-sabotage').classList.add('opacity-50', 'pointer-events-none');
             }
-            // Level 3: Director
             if (level < 3) {
-                document.getElementById('admin-lock').classList.remove('hidden'); // Locks scenario
-                // Hide dangerous buttons in Edit Modal (handled in openEditModal)
+                document.getElementById('admin-lock').classList.remove('hidden'); 
             } else {
                 document.getElementById('admin-lock').classList.add('hidden');
+            }
+            if (level === 4) {
+                document.getElementById('master-panel').classList.remove('hidden');
+                document.getElementById('capital-container').classList.add('cursor-pointer', 'hover:bg-slate-900');
+                document.getElementById('capital-edit-icon').classList.remove('hidden');
             }
         }
 
@@ -477,32 +547,31 @@
             updateRivalBar();
             
             try {
-                // 1. Fetch Assets
+                if(!client) client = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
                 const { data, error } = await client.from('investments').select('*').order('id', { ascending: true });
-                if (error && error.code !== 'PGRST103') throw error; // Ignore 103 (Range Not Satisfiable) if empty table
+                if (error && error.code !== 'PGRST103') throw error; 
 
                 if (data && data.length > 0) autoMapColumns(data[0]);
-                renderDashboard(data || []);
-                updateChart(data || []);
+                globalData = data || []; 
+                renderDashboard(globalData);
+                updateChart(globalData);
 
-                // 2. Fetch Logs
                 refreshLogs();
 
-                // 3. Start Auto-Refresh Interval (every 10s)
                 if (!window.refreshInterval) {
                     window.refreshInterval = setInterval(refreshLogs, 10000);
                 }
 
             } catch (err) {
                 console.error(err);
-                // Silent error in logs if possible, else console
+                logAction("Errore init: " + err.message, "error");
             }
             loader.classList.add('hidden');
         }
 
         async function refreshLogs() {
             if(!client) return;
-            // Fetch last 20 logs
             const { data: logs, error } = await client
                 .from('audit_logs')
                 .select('*')
@@ -511,7 +580,7 @@
             
             if(!error && logs) {
                 const logContainer = document.getElementById('activity-log');
-                logContainer.innerHTML = ''; // Clear current
+                logContainer.innerHTML = ''; 
                 logs.forEach(log => {
                     const div = document.createElement('div');
                     let color = "text-slate-400";
@@ -522,20 +591,19 @@
                     const time = new Date(log.created_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
                     div.className = `${color} border-l-2 border-slate-800 pl-2 text-[10px]`;
                     div.innerHTML = `<span class="opacity-50">[${time}]</span> <span class="font-bold text-slate-300">${log.username}:</span> ${log.action}`;
-                    logContainer.appendChild(div); // Since flex-col-reverse, append puts it at bottom visually? No, DOM order.
+                    logContainer.appendChild(div); 
                 });
             }
         }
 
         async function logAction(text, type='info') {
-            // 1. Send to DB
             if(currentUser && client) {
                 await client.from('audit_logs').insert([{
                     username: currentUser.username,
                     action: text,
                     type: type
                 }]);
-                refreshLogs(); // Refresh UI immediately
+                refreshLogs(); 
             }
         }
 
@@ -582,9 +650,7 @@
                 let border = status === 'Attivo' ? 'border-emerald-800' : (status === 'In attesa' ? 'border-amber-800' : 'border-red-900');
                 let text = status === 'Attivo' ? 'text-emerald-500' : (status === 'In attesa' ? 'text-amber-500' : 'text-red-500');
 
-                // Safe object passing
                 const id = item.id; 
-                // We store data in a global map or fetch by ID, passing ID is safer than object string
                 
                 html += `
                 <div class="card-panel p-4 rounded flex flex-col ${border} relative overflow-hidden group">
@@ -610,27 +676,31 @@
 
         async function createNewAsset(e) {
             e.preventDefault();
-            if(currentUser.role_level < 2) return;
+            if(currentUser.role_level < 2) return alert("Livello insufficiente!");
 
             const newItem = {};
-            newItem[dbCols.name] = document.getElementById('new-name').value;
-            newItem[dbCols.desc] = document.getElementById('new-desc').value;
-            newItem[dbCols.value] = parseInt(document.getElementById('new-value').value, 10) || 0;
-            newItem[dbCols.roi] = parseFloat(document.getElementById('new-roi').value) || 0;
-            newItem[dbCols.risk] = document.getElementById('new-risk').value;
-            newItem[dbCols.status] = 'Attivo';
+            // Using standard SQL column names as default fallback
+            newItem[dbCols.name || 'name'] = document.getElementById('new-name').value;
+            newItem[dbCols.desc || 'description'] = document.getElementById('new-desc').value;
+            newItem[dbCols.value || 'current_value'] = parseInt(document.getElementById('new-value').value, 10) || 0;
+            newItem[dbCols.roi || 'roi_rate'] = parseFloat(document.getElementById('new-roi').value) || 0;
+            newItem[dbCols.risk || 'risk_level'] = document.getElementById('new-risk').value;
+            newItem[dbCols.status || 'status'] = 'Attivo';
 
             try {
                 const { error } = await client.from('investments').insert([newItem]);
                 if(error) throw error;
                 closeModal('create-modal');
-                logAction(`Nuova impresa fondata: ${newItem[dbCols.name]}`, 'success');
+                logAction(`Nuova impresa fondata: ${newItem[dbCols.name||'name']}`, 'success');
                 initSystem();
-            } catch(err) { alert(err.message); }
+            } catch(err) { 
+                alert("ERRORE CREAZIONE: " + err.message);
+                console.error(err);
+            }
         }
 
         async function saveChanges() {
-            if(currentUser.role_level < 3) return; // Security Check
+            if(currentUser.role_level < 3) return; 
             const id = document.getElementById('edit-id').value;
             const updates = {};
             updates[dbCols.name] = document.getElementById('edit-name').value;
@@ -701,7 +771,8 @@
             const newVal = Math.floor((parseInt(target[dbCols.value], 10)||0) * mult);
             let up = {}; up[dbCols.value] = newVal;
             
-            await client.from('investments').update(up).eq('id', target.id);
+            const { error } = await client.from('investments').update(up).eq('id', target.id);
+            if(error) { alert("Errore Simulazione: " + error.message); return; }
             logAction(msg, type);
             initSystem();
         }
@@ -712,6 +783,108 @@
             alert("Incassati: " + val);
             playSound('sfx-coin');
             logAction(`Dividendi incassati: ${val}`, 'success');
+        }
+
+        // --- MASTER FUNCTIONS (USER MANAGER) ---
+        async function openUserManager() {
+            const list = document.getElementById('user-list');
+            list.innerHTML = '<div class="loader"></div>';
+            document.getElementById('user-manager-modal').classList.remove('hidden');
+            
+            const { data: users, error } = await client.from('users').select('*').order('role_level', {ascending: false});
+            
+            if(error) { list.innerHTML = "Errore caricamento utenti."; return; }
+            
+            list.innerHTML = '';
+            users.forEach(u => {
+                const div = document.createElement('div');
+                div.className = "flex justify-between items-center p-2 border-b border-slate-700";
+                
+                let roleColor = u.role_level === 4 ? 'text-purple-400' : (u.role_level === 3 ? 'text-amber-400' : 'text-slate-300');
+                let roleLabel = u.role_level === 4 ? 'MASTER' : (u.role_level === 3 ? 'DIRETTORE' : (u.role_level === 2 ? 'AGENTE' : 'OSSERVATORE'));
+
+                div.innerHTML = `
+                    <div>
+                        <span class="font-bold text-sm ${roleColor}">${u.username}</span>
+                        <span class="text-[10px] block text-slate-500">${roleLabel} (Lv.${u.role_level})</span>
+                    </div>
+                    <div class="flex gap-1">
+                        ${u.role_level < 4 ? `
+                        <button onclick="changeUserRole('${u.id}', ${u.role_level + 1})" class="px-2 py-1 bg-emerald-900 text-emerald-400 text-[10px] rounded hover:bg-emerald-800">▲</button>
+                        <button onclick="changeUserRole('${u.id}', ${u.role_level - 1})" class="px-2 py-1 bg-red-900 text-red-400 text-[10px] rounded hover:bg-red-800">▼</button>
+                        ` : '<span class="text-[10px] text-slate-600">IMMUNE</span>'}
+                    </div>
+                `;
+                list.appendChild(div);
+            });
+        }
+
+        async function changeUserRole(uid, newLevel) {
+            if(newLevel < 1 || newLevel > 4) return;
+            await client.from('users').update({role_level: newLevel}).eq('id', uid);
+            openUserManager(); // Refresh list
+            logAction(`Ruolo utente aggiornato dal Master.`, 'warn');
+        }
+
+        async function editCapital() {
+            if (currentUser.role_level !== 4) return; // Solo Master
+
+            let currentTotal = parseInt(document.getElementById('total-capital').innerText.replace(/\D/g,'')) || 0;
+            let newValue = prompt("OVERRIDE CAPITALE (MASTER ONLY)\nInserisci il nuovo valore totale desiderato (GP):", currentTotal);
+            
+            if (newValue === null) return;
+            newValue = parseInt(newValue);
+            if (isNaN(newValue)) return alert("Valore non valido.");
+
+            // Calcola la somma degli asset ESCLUSO la "Riserva"
+            let otherAssetsTotal = 0;
+            let treasuryId = null;
+            const treasuryName = "Riserva di Cassa";
+
+            globalData.forEach(item => {
+                let val = parseInt(item[dbCols.value], 10) || 0;
+                let name = item[dbCols.name] || "";
+                
+                if (name === treasuryName) {
+                    treasuryId = item.id;
+                } else {
+                    otherAssetsTotal += val;
+                }
+            });
+
+            let neededTreasuryValue = newValue - otherAssetsTotal;
+
+            try {
+                if (treasuryId) {
+                    let updates = {};
+                    updates[dbCols.value] = neededTreasuryValue;
+                    const { error } = await client.from('investments').update(updates).eq('id', treasuryId);
+                    if(error) throw error;
+                } else {
+                    let newItem = {};
+                    newItem[dbCols.name] = treasuryName;
+                    newItem[dbCols.desc] = "Fondi liquidi gestiti direttamente dal Master.";
+                    newItem[dbCols.value] = neededTreasuryValue;
+                    newItem[dbCols.roi] = 0;
+                    newItem[dbCols.risk] = 'Basso';
+                    newItem[dbCols.status] = 'Attivo';
+                    
+                    const { error } = await client.from('investments').insert([newItem]);
+                    if(error) throw error;
+                }
+                
+                logAction(`Capitale forzato a ${newValue} GP dal Master.`, "warn");
+                initSystem(); 
+                
+            } catch (err) {
+                alert("Errore aggiornamento capitale: " + err.message);
+            }
+        }
+
+        function editRivalManual() {
+            if(currentUser.role_level !== 4) return;
+            let val = prompt("Set Rival Influence % (0-100):", rivalProgress);
+            if(val !== null) forceRival(parseInt(val));
         }
 
         function openEditModal(id) {
@@ -751,6 +924,13 @@
         }
         function getMarketMultiplier() { return marketState === 'boom' ? 1.5 : (marketState === 'crisis' ? 0.5 : (marketState === 'war' ? 1.2 : 1.0)); }
         function updateRivalBar() { document.getElementById('rival-bar').style.width = rivalProgress + "%"; document.getElementById('rival-percent').innerText = rivalProgress + "%"; }
+        function forceRival(val) { 
+            rivalProgress = Math.min(100, Math.max(0, val || 0)); 
+            localStorage.setItem('inkCorp_rival', rivalProgress); 
+            updateRivalBar(); 
+            logAction("Influenza rivale forzata a " + val + "%", "warn"); 
+        }
+        
         function sabotageRival() { if(currentUser.role_level >= 2 && confirm("Spendere 500gp?")) { rivalProgress = Math.max(0, rivalProgress - 20); updateRivalBar(); logAction("Sabotaggio effettuato", "success"); playSound('sfx-upgrade'); } }
         function updateChart(data) {
             const ctx = document.getElementById('riskChart').getContext('2d');
