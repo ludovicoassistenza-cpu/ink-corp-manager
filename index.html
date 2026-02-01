@@ -372,8 +372,6 @@
                 if(itemStatus === 'In attesa') { border = 'border-amber-800'; text = 'text-amber-500'; }
                 if(itemStatus === 'Liquidato') { border = 'border-red-900'; text = 'text-red-500'; }
 
-                const safeData = JSON.stringify(item).replace(/"/g, '&quot;');
-
                 html += `
                 <div class="card-panel p-4 rounded flex flex-col ${border} relative overflow-hidden group">
                     <div class="flex justify-between items-start mb-2">
@@ -386,7 +384,7 @@
                         <div class="text-right"><span class="text-[10px] text-slate-500 uppercase block">ROI</span><span class="text-cyan-400 font-mono font-bold text-sm">${roi}%</span></div>
                         <div class="col-span-2 border-t border-slate-800 pt-1 flex justify-between"><span class="text-[10px] text-slate-500 uppercase">Rischio</span><span class="text-[10px] font-bold ${itemRisk === 'Alto' || itemRisk === 'Criminale' ? 'text-red-500' : 'text-slate-300'}">${itemRisk}</span></div>
                     </div>
-                    <button onclick="openEditModal(${safeData})" class="mt-auto w-full py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-bold uppercase rounded transition-colors shadow-sm">Gestisci</button>
+                    <button onclick="openEditModal('${item.id}')" class="mt-auto w-full py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-bold uppercase rounded transition-colors shadow-sm">Gestisci</button>
                 </div>`;
             });
 
@@ -504,6 +502,20 @@
             playSound('sfx-coin');
             alert("Hai incassato: " + document.getElementById('total-dividends').innerText);
             logAction(`Incasso effettuato`, "success");
+        }
+
+        function openEditModal(id) {
+            const item = globalData.find(i => i.id == id);
+            if (!item) return;
+
+            playSound('sfx-click');
+            document.getElementById('edit-id').value = item.id;
+            document.getElementById('modal-asset-name').innerText = DB_COLS.name ? (item[DB_COLS.name] || "Senza Nome") : "Senza Nome";
+            document.getElementById('edit-value').value = DB_COLS.value ? item[DB_COLS.value] : 0;
+            document.getElementById('edit-roi').value = DB_COLS.roi ? item[DB_COLS.roi] : 0;
+            document.getElementById('edit-status').value = DB_COLS.status ? item[DB_COLS.status] : 'Attivo';
+            document.getElementById('edit-desc').value = DB_COLS.description ? item[DB_COLS.description] : '';
+            document.getElementById('edit-modal').classList.remove('hidden');
         }
 
         function logAction(msg, type='info') {
