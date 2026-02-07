@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ink Corp. | Management System v10.0</title>
+    <title>Ink Corp. | Management System v11.0</title>
     
     <script src="https://cdn.tailwindcss.com"></script>
     
@@ -35,30 +35,21 @@
         ::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
         ::-webkit-scrollbar-thumb:hover { background: #475569; }
 
-        /* Animations */
-        @keyframes scanline {
-            0% { transform: translateY(-100%); }
-            100% { transform: translateY(100%); }
-        }
-        .scanline::after {
-            content: "";
-            position: absolute;
-            inset: 0;
-            background: linear-gradient(to bottom, transparent, rgba(16, 185, 129, 0.1), transparent);
-            animation: scanline 4s linear infinite;
-            pointer-events: none;
-        }
-
         .glass-panel {
-            background: rgba(15, 23, 42, 0.6);
+            background: rgba(15, 23, 42, 0.8);
             backdrop-filter: blur(8px);
             border: 1px solid rgba(51, 65, 85, 0.5);
         }
 
-        .btn-action {
-            transition: all 0.2s;
-        }
+        .btn-action { transition: all 0.2s; }
         .btn-action:active { transform: scale(0.95); }
+        
+        /* Event Card Animation */
+        @keyframes slideIn {
+            from { transform: translateY(-50px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+        .event-card { animation: slideIn 0.5s ease-out; }
     </style>
 </head>
 <body class="h-screen flex flex-col overflow-hidden text-sm">
@@ -66,13 +57,14 @@
     <audio id="sfx-click" src="https://assets.mixkit.co/active_storage/sfx/2568/2568-preview.mp3"></audio>
     <audio id="sfx-coin" src="https://assets.mixkit.co/active_storage/sfx/2003/2003-preview.mp3"></audio>
     <audio id="sfx-alarm" src="https://assets.mixkit.co/active_storage/sfx/995/995-preview.mp3"></audio>
+    <audio id="sfx-boom" src="https://assets.mixkit.co/active_storage/sfx/257/257-preview.mp3"></audio>
 
     <div id="login-screen" class="fixed inset-0 z-[100] flex items-center justify-center bg-black/95">
         <div class="w-full max-w-md p-8 border border-amber-900/50 rounded-lg bg-[#050101] relative overflow-hidden">
             <div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-amber-600 to-transparent"></div>
             <div class="text-center mb-10">
                 <h1 class="fantasy-font text-5xl text-amber-600 mb-2">INK CORP.</h1>
-                <p class="text-slate-500 text-xs tracking-[0.4em] uppercase">Secure Terminal v10.0</p>
+                <p class="text-slate-500 text-xs tracking-[0.4em] uppercase">Secure Terminal v11.0</p>
             </div>
             <div class="space-y-4">
                 <input type="text" id="login-user" class="w-full bg-slate-900/50 border border-slate-800 p-3 text-white rounded focus:border-amber-600 outline-none text-center tracking-widest" placeholder="IDENTIFICATIVO">
@@ -90,18 +82,18 @@
                 <div class="text-amber-500 text-2xl"><i class="fa-solid fa-dragon"></i></div>
                 <div>
                     <h1 class="fantasy-font text-xl text-slate-200 font-bold tracking-wider">INK CORP.</h1>
-                    <div class="text-[9px] text-emerald-500 font-mono">SYSTEM ONLINE /// CONNECTED</div>
+                    <div class="text-[9px] text-emerald-500 font-mono">SYSTEM ONLINE</div>
                 </div>
             </div>
 
             <div class="hidden md:flex items-center gap-8">
                 <div class="text-center">
-                    <div class="text-[9px] text-slate-500 uppercase">Patrimonio Totale</div>
+                    <div class="text-[9px] text-slate-500 uppercase">Patrimonio Corp.</div>
                     <div id="total-capital" class="text-emerald-400 font-mono text-lg font-bold">---</div>
                 </div>
                 <div class="h-8 w-px bg-slate-800"></div>
                 <div class="text-center cursor-pointer hover:text-white transition-colors" onclick="collectDividends()">
-                    <div class="text-[9px] text-slate-500 uppercase">Flusso Settimanale</div>
+                    <div class="text-[9px] text-slate-500 uppercase">Flusso Atteso</div>
                     <div id="total-dividends" class="text-cyan-400 font-mono text-lg font-bold">---</div>
                 </div>
             </div>
@@ -125,7 +117,7 @@
                 <div onclick="openWarRoom()" class="bg-gradient-to-br from-slate-900 to-red-950/30 border border-red-900/30 p-4 rounded cursor-pointer group hover:border-red-500 transition-all shadow-lg relative overflow-hidden">
                     <div class="absolute -right-4 -top-4 text-red-900/20 text-6xl group-hover:scale-110 transition-transform"><i class="fa-solid fa-crosshairs"></i></div>
                     <h3 class="fantasy-font text-red-500 text-lg mb-1"><i class="fa-solid fa-shield-halved mr-2"></i> WAR ROOM</h3>
-                    <p class="text-xs text-slate-400">Gestione conflitti e spionaggio</p>
+                    <p class="text-xs text-slate-400">Livello Minaccia: ALTO</p>
                     <div class="mt-3 flex gap-1 h-1.5">
                         <div id="mini-bar-b" class="bg-red-600 h-full rounded w-0 transition-all duration-1000"></div>
                         <div id="mini-bar-c" class="bg-orange-600 h-full rounded w-0 transition-all duration-1000"></div>
@@ -137,26 +129,25 @@
                         <i class="fa-solid fa-plus text-emerald-500 text-xl"></i>
                         <span class="text-[10px] uppercase font-bold text-slate-300">Nuovo Asset</span>
                     </button>
-                    <button onclick="runSimulation()" class="bg-slate-800 hover:bg-slate-700 p-3 rounded border border-slate-700 flex flex-col items-center justify-center gap-2 btn-action">
-                        <i class="fa-solid fa-dice text-purple-500 text-xl"></i>
-                        <span class="text-[10px] uppercase font-bold text-slate-300">Evento</span>
+                    <button onclick="triggerEvent()" class="bg-slate-800 hover:bg-slate-700 p-3 rounded border border-slate-700 flex flex-col items-center justify-center gap-2 btn-action">
+                        <i class="fa-solid fa-bolt text-yellow-500 text-xl"></i>
+                        <span class="text-[10px] uppercase font-bold text-slate-300">Evento Random</span>
                     </button>
                 </div>
 
                 <div class="flex-grow bg-[#050a14] border border-slate-800 rounded flex flex-col overflow-hidden shadow-inner">
                     <div class="bg-slate-900 p-2 text-[10px] font-bold text-slate-400 uppercase border-b border-slate-800 flex justify-between items-center">
-                        <span><i class="fa-solid fa-list-ul mr-1"></i> Registro Eventi</span>
+                        <span><i class="fa-solid fa-list-ul mr-1"></i> Registro</span>
                         <div class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></div>
                     </div>
-                    <div id="audit-log" class="flex-grow overflow-y-auto p-2 space-y-2 font-mono text-[10px]">
-                        </div>
+                    <div id="audit-log" class="flex-grow overflow-y-auto p-2 space-y-2 font-mono text-[10px]"></div>
                 </div>
             </div>
 
             <div class="col-span-12 lg:col-span-9 flex flex-col h-full overflow-hidden">
                 <div class="flex justify-between items-center mb-4 bg-slate-900/50 p-2 rounded border border-slate-800">
                     <div class="flex items-center gap-2">
-                        <span class="text-xs font-bold text-slate-400 uppercase px-2">Stato Mercato:</span>
+                        <span class="text-xs font-bold text-slate-400 uppercase px-2">Scenario:</span>
                         <select id="world-state" onchange="updateWorldState()" class="bg-slate-800 text-amber-500 text-xs font-bold rounded px-2 py-1 outline-none border border-slate-700">
                             <option value="neutral">⚖️ Stabile</option>
                             <option value="war">⚔️ Guerra</option>
@@ -164,17 +155,18 @@
                             <option value="crisis">📉 Crisi</option>
                         </select>
                     </div>
-                    <div class="text-xs text-slate-500 italic px-2">Ultimo aggiornamento: <span id="last-update">Adesso</span></div>
+                    <button onclick="fetchAssets()" class="text-xs text-slate-500 hover:text-white"><i class="fa-solid fa-sync mr-1"></i> Aggiorna</button>
                 </div>
 
-                <div id="asset-grid" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 overflow-y-auto pb-20 pr-1">
-                    </div>
+                <div id="asset-grid" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 overflow-y-auto pb-20 pr-1"></div>
             </div>
         </div>
     </div>
 
     <div id="modal-profile" class="fixed inset-0 z-50 flex items-center justify-center bg-black/90 backdrop-blur-sm hidden">
-        <div class="bg-slate-900 w-full max-w-5xl h-[85vh] rounded-xl border border-slate-700 flex overflow-hidden shadow-2xl">
+        <div class="bg-slate-900 w-full max-w-5xl h-[85vh] rounded-xl border border-slate-700 flex overflow-hidden shadow-2xl relative">
+            <button onclick="closeModal('modal-profile')" class="absolute top-4 right-4 text-slate-500 hover:text-white"><i class="fa-solid fa-times text-xl"></i></button>
+            
             <div class="w-1/3 bg-slate-950 border-r border-slate-800 p-6 flex flex-col">
                 <div class="flex flex-col items-center mb-6">
                     <div class="w-24 h-24 rounded-full bg-slate-800 border-2 border-amber-600 flex items-center justify-center text-4xl text-slate-400 mb-4 shadow-[0_0_15px_rgba(217,119,6,0.3)]">
@@ -183,111 +175,109 @@
                     <h2 id="prof-username" class="text-2xl text-white font-bold fantasy-font">---</h2>
                     <span id="prof-role" class="text-xs text-amber-600 uppercase tracking-widest mt-1">---</span>
                 </div>
-
                 <div class="bg-slate-900 p-4 rounded border border-slate-800 mb-4">
                     <div class="text-[10px] text-slate-500 uppercase font-bold">Saldo Disponibile</div>
                     <div id="prof-balance" class="text-3xl text-emerald-400 font-mono font-bold mt-1">0 GP</div>
                 </div>
-
                 <div class="flex-grow overflow-hidden flex flex-col">
-                    <label class="text-[10px] text-slate-500 uppercase font-bold mb-1">Dati Biometrici / Note</label>
+                    <label class="text-[10px] text-slate-500 uppercase font-bold mb-1">Dati Biometrici</label>
                     <textarea id="prof-bio" class="flex-grow bg-slate-900 border border-slate-800 rounded p-3 text-xs text-slate-300 resize-none outline-none focus:border-amber-900 mb-2"></textarea>
                     <button onclick="saveProfile()" class="bg-slate-800 hover:bg-slate-700 text-slate-300 py-2 rounded text-xs uppercase font-bold border border-slate-700">Salva Dati</button>
                 </div>
             </div>
-
             <div class="w-2/3 bg-slate-900 p-6 flex flex-col">
                 <div class="flex justify-between items-center border-b border-slate-800 pb-4 mb-4">
                     <h3 class="text-xl text-white fantasy-font"><i class="fa-solid fa-briefcase mr-2"></i> Possedimenti</h3>
-                    <div class="flex gap-2">
-                        <button onclick="openModal('create-personal')" class="bg-emerald-900/30 hover:bg-emerald-900/50 text-emerald-500 border border-emerald-800/50 px-3 py-1.5 rounded text-xs uppercase font-bold flex items-center gap-2">
-                            <i class="fa-solid fa-plus"></i> Nuovo Asset Personale
-                        </button>
-                        <button onclick="closeModal('modal-profile')" class="bg-slate-800 text-slate-400 px-3 py-1.5 rounded hover:text-white"><i class="fa-solid fa-times"></i></button>
-                    </div>
+                    <button onclick="openModal('create-personal')" class="bg-emerald-900/30 hover:bg-emerald-900/50 text-emerald-500 border border-emerald-800/50 px-3 py-1.5 rounded text-xs uppercase font-bold">
+                        <i class="fa-solid fa-plus mr-1"></i> Nuovo Asset Personale
+                    </button>
                 </div>
-                
-                <div id="prof-assets" class="grid grid-cols-2 gap-3 overflow-y-auto content-start flex-grow">
-                    </div>
+                <div id="prof-assets" class="grid grid-cols-2 gap-3 overflow-y-auto content-start flex-grow"></div>
             </div>
         </div>
     </div>
 
     <div id="modal-war-room" class="fixed inset-0 z-50 flex items-center justify-center bg-black/95 backdrop-blur-md hidden">
-        <div class="w-full h-full max-w-7xl max-h-[90vh] bg-[#0a0505] border border-red-900/40 rounded-lg flex flex-col relative overflow-hidden scanline">
-            
+        <div class="w-full h-full max-w-7xl max-h-[90vh] bg-[#0a0505] border border-red-900/40 rounded-lg flex flex-col relative overflow-hidden">
             <div class="h-16 border-b border-red-900/30 flex justify-between items-center px-6 bg-gradient-to-r from-red-950/20 to-transparent">
-                <h2 class="text-2xl text-red-600 fantasy-font font-bold tracking-widest"><i class="fa-solid fa-globe mr-3"></i>WAR ROOM // GLOBAL INTEL</h2>
-                <button onclick="closeModal('modal-war-room')" class="text-red-600 hover:text-white text-sm uppercase font-bold border border-red-900 px-4 py-1 rounded">Disconnetti</button>
+                <h2 class="text-2xl text-red-600 fantasy-font font-bold tracking-widest"><i class="fa-solid fa-globe mr-3"></i>WAR ROOM</h2>
+                <button onclick="closeModal('modal-war-room')" class="text-red-600 hover:text-white text-sm uppercase font-bold border border-red-900 px-4 py-1 rounded">CHIUDI</button>
             </div>
 
             <div class="flex-grow flex p-6 gap-6 overflow-hidden">
-                <div class="w-1/4 flex flex-col gap-6">
-                    <div class="flex-1 bg-slate-900/40 border border-red-900/30 p-4 rounded relative overflow-hidden">
+                <div class="w-1/3 flex flex-col gap-6 overflow-y-auto pr-2">
+                    <div class="bg-slate-900/40 border border-red-900/30 p-4 rounded">
                         <div class="flex justify-between items-center mb-2">
-                            <h3 class="text-red-500 font-bold">FAZIONE B</h3>
+                            <h3 class="text-red-500 font-bold">RIVALE B</h3>
                             <span id="war-b-val" class="text-red-500 font-mono font-bold text-xl">0%</span>
                         </div>
                         <div class="h-2 bg-slate-950 rounded-full overflow-hidden mb-4">
                             <div id="war-b-bar" class="h-full bg-red-600 w-0 transition-all duration-1000"></div>
                         </div>
                         <div class="grid grid-cols-2 gap-2">
-                            <button onclick="sabotage('B', 'spy')" class="bg-black/50 hover:bg-red-900/20 border border-red-900/30 py-2 text-[10px] text-red-400 uppercase font-bold rounded">Spia (200gp)</button>
-                            <button onclick="sabotage('B', 'sabotage')" class="bg-black/50 hover:bg-red-900/20 border border-red-900/30 py-2 text-[10px] text-red-400 uppercase font-bold rounded">Sabota (500gp)</button>
+                            <button onclick="sabotage('B', 'spy')" class="bg-black/50 hover:bg-slate-800 border border-slate-700 py-2 text-[10px] text-slate-300 uppercase rounded">Spia (200gp)</button>
+                            <button onclick="sabotage('B', 'sabotage')" class="bg-black/50 hover:bg-red-900/40 border border-red-900/30 py-2 text-[10px] text-red-400 uppercase rounded">Sabota (500gp)</button>
+                            <button onclick="sabotage('B', 'cyber')" class="bg-black/50 hover:bg-cyan-900/40 border border-cyan-900/30 py-2 text-[10px] text-cyan-400 uppercase rounded">Cyber (300gp)</button>
+                            <button onclick="sabotage('B', 'hitman')" class="bg-black/50 hover:bg-purple-900/40 border border-purple-900/30 py-2 text-[10px] text-purple-400 uppercase rounded">Sicario (2k gp)</button>
                         </div>
                     </div>
-                    <div class="flex-1 bg-slate-900/40 border border-orange-900/30 p-4 rounded relative overflow-hidden">
+                    <div class="bg-slate-900/40 border border-orange-900/30 p-4 rounded">
                         <div class="flex justify-between items-center mb-2">
-                            <h3 class="text-orange-500 font-bold">FAZIONE C</h3>
+                            <h3 class="text-orange-500 font-bold">RIVALE C</h3>
                             <span id="war-c-val" class="text-orange-500 font-mono font-bold text-xl">0%</span>
                         </div>
                         <div class="h-2 bg-slate-950 rounded-full overflow-hidden mb-4">
                             <div id="war-c-bar" class="h-full bg-orange-600 w-0 transition-all duration-1000"></div>
                         </div>
                         <div class="grid grid-cols-2 gap-2">
-                            <button onclick="sabotage('C', 'spy')" class="bg-black/50 hover:bg-orange-900/20 border border-orange-900/30 py-2 text-[10px] text-orange-400 uppercase font-bold rounded">Spia (200gp)</button>
-                            <button onclick="sabotage('C', 'sabotage')" class="bg-black/50 hover:bg-orange-900/20 border border-orange-900/30 py-2 text-[10px] text-orange-400 uppercase font-bold rounded">Sabota (500gp)</button>
+                            <button onclick="sabotage('C', 'spy')" class="bg-black/50 hover:bg-slate-800 border border-slate-700 py-2 text-[10px] text-slate-300 uppercase rounded">Spia (200gp)</button>
+                            <button onclick="sabotage('C', 'sabotage')" class="bg-black/50 hover:bg-orange-900/40 border border-orange-900/30 py-2 text-[10px] text-orange-400 uppercase rounded">Sabota (500gp)</button>
+                            <button onclick="sabotage('C', 'cyber')" class="bg-black/50 hover:bg-cyan-900/40 border border-cyan-900/30 py-2 text-[10px] text-cyan-400 uppercase rounded">Cyber (300gp)</button>
+                            <button onclick="sabotage('C', 'hitman')" class="bg-black/50 hover:bg-purple-900/40 border border-purple-900/30 py-2 text-[10px] text-purple-400 uppercase rounded">Sicario (2k gp)</button>
                         </div>
                     </div>
                 </div>
 
-                <div class="w-2/4 bg-black border border-slate-800 rounded relative flex flex-col p-4 font-mono text-xs">
-                    <div class="text-emerald-500 mb-2 border-b border-emerald-900/30 pb-1">CONSOLE SPIONAGGIO ATTIVA...</div>
+                <div class="w-1/3 bg-black border border-slate-800 rounded relative flex flex-col p-4 font-mono text-xs">
+                    <div class="text-emerald-500 mb-2 border-b border-emerald-900/30 pb-1">CONSOLE SPIONAGGIO</div>
                     <div id="war-console" class="flex-grow overflow-y-auto space-y-1 text-slate-400">
-                        <div class="text-slate-600">In attesa di comandi...</div>
-                    </div>
-                    <div class="mt-2 flex">
-                        <span class="text-emerald-500 mr-2">></span>
-                        <input type="text" class="bg-transparent outline-none text-white w-full" placeholder="Comandi disabilitati (Usa i tasti a sinistra)" disabled>
+                        <div class="text-slate-600">Sistema pronto.</div>
                     </div>
                 </div>
 
-                <div class="w-1/4 bg-slate-900/30 border border-slate-800 p-4 rounded flex flex-col">
-                    <h3 class="text-slate-400 font-bold mb-4 border-b border-slate-800 pb-2">OPZIONI MASTER</h3>
-                    <div class="space-y-2">
-                        <button onclick="masterEditRival('B')" class="w-full bg-slate-800 hover:bg-slate-700 text-slate-300 py-2 text-xs rounded">Set Rivali B</button>
-                        <button onclick="masterEditRival('C')" class="w-full bg-slate-800 hover:bg-slate-700 text-slate-300 py-2 text-xs rounded">Set Rivali C</button>
-                        <button onclick="resetRivals()" class="w-full bg-red-900/20 hover:bg-red-900/40 text-red-500 border border-red-900/50 py-2 text-xs rounded mt-4">RESET TOTALE</button>
+                <div class="w-1/3 bg-slate-900/30 border border-slate-800 p-4 rounded flex flex-col">
+                    <h3 class="text-slate-400 font-bold mb-4 border-b border-slate-800 pb-2">MASTER CONTROL</h3>
+                    <div class="space-y-3">
+                        <div class="bg-slate-800 p-2 rounded">
+                            <label class="text-[9px] text-slate-500 block uppercase">Forza Valori Rivali (%)</label>
+                            <div class="flex gap-2 mt-1">
+                                <button onclick="masterSetRival('B')" class="flex-1 bg-red-900/30 hover:bg-red-900/50 text-red-400 text-xs py-1 rounded border border-red-900">Set B</button>
+                                <button onclick="masterSetRival('C')" class="flex-1 bg-orange-900/30 hover:bg-orange-900/50 text-orange-400 text-xs py-1 rounded border border-orange-900">Set C</button>
+                            </div>
+                        </div>
+                        <div class="bg-slate-800 p-2 rounded">
+                            <label class="text-[9px] text-slate-500 block uppercase">Azioni Mercato</label>
+                            <button onclick="masterEvent('crash')" class="w-full mt-1 bg-red-950 text-red-500 hover:text-white text-xs py-1 rounded">CROLLO MERCATO (-10%)</button>
+                            <button onclick="masterEvent('boom')" class="w-full mt-1 bg-emerald-950 text-emerald-500 hover:text-white text-xs py-1 rounded">BOOM ECONOMICO (+10%)</button>
+                        </div>
+                        <button onclick="resetRivals()" class="w-full bg-slate-700 hover:bg-red-600 text-white py-2 text-xs rounded mt-auto">RESET TOTALE WAR ROOM</button>
                     </div>
-                    <div class="mt-auto text-[9px] text-slate-600 text-center">Solo livello 4 autorizzato</div>
                 </div>
             </div>
         </div>
     </div>
 
     <div id="modal-edit" class="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm hidden">
-        <div class="bg-slate-900 border border-slate-700 w-full max-w-lg rounded shadow-xl p-6">
+        <div class="bg-slate-900 border border-slate-700 w-full max-w-lg rounded shadow-xl p-6 relative">
             <h3 id="modal-title" class="fantasy-font text-xl text-white mb-4">Gestione Asset</h3>
             <input type="hidden" id="edit-id">
             
             <div class="space-y-3">
                 <input type="text" id="edit-name" class="w-full bg-slate-800 border border-slate-600 p-2 text-white rounded outline-none" placeholder="Nome Asset">
-                
                 <div class="grid grid-cols-2 gap-3">
                     <input type="number" id="edit-value" class="bg-slate-800 border border-slate-600 p-2 text-white rounded outline-none" placeholder="Valore (GP)">
                     <input type="number" step="0.1" id="edit-roi" class="bg-slate-800 border border-slate-600 p-2 text-white rounded outline-none" placeholder="ROI %">
                 </div>
-
                 <div class="grid grid-cols-2 gap-3">
                     <select id="edit-risk" class="bg-slate-800 border border-slate-600 p-2 text-white rounded outline-none">
                         <option value="Basso">🟢 Basso</option>
@@ -298,7 +288,6 @@
                     <select id="edit-owner" class="bg-slate-800 border border-slate-600 p-2 text-white rounded outline-none">
                         </select>
                 </div>
-
                 <textarea id="edit-desc" class="w-full h-24 bg-slate-800 border border-slate-600 p-2 text-white rounded outline-none resize-none" placeholder="Descrizione..."></textarea>
             </div>
 
@@ -312,6 +301,16 @@
         </div>
     </div>
 
+    <div id="modal-event" class="fixed inset-0 z-[60] flex items-center justify-center bg-black/90 backdrop-blur-md hidden">
+        <div class="bg-slate-900 border border-amber-500/50 w-full max-w-md p-8 rounded-xl text-center event-card shadow-[0_0_50px_rgba(217,119,6,0.2)]">
+            <div id="event-icon" class="text-6xl mb-4 text-amber-500"><i class="fa-solid fa-bolt"></i></div>
+            <h2 id="event-title" class="text-2xl text-white font-bold mb-2 fantasy-font">EVENTO</h2>
+            <p id="event-desc" class="text-slate-300 mb-6">Descrizione evento...</p>
+            <div id="event-effect" class="bg-black/30 p-2 rounded text-emerald-400 font-mono text-sm mb-6">Effetto</div>
+            <button onclick="closeModal('modal-event')" class="bg-slate-800 hover:bg-white hover:text-black text-white px-6 py-2 rounded uppercase font-bold transition-colors">ACCETTA</button>
+        </div>
+    </div>
+
     <script>
         const SUPABASE_URL = 'https://mazammutcogkxhugfwqm.supabase.co';
         const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1hemFtbXV0Y29na3hodWdmd3FtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njk4NjAwOTIsImV4cCI6MjA4NTQzNjA5Mn0.u99CFeecPwJrHYIUJv7miDSWoDUGJpg9S7MuaK_hMvM';
@@ -321,7 +320,7 @@
         let currentUser = null;
         let globalData = [];
         let allUsers = [];
-        let rivals = { B: 15, C: 5 };
+        let rivals = { B: parseInt(localStorage.getItem('rival_b')||15), C: parseInt(localStorage.getItem('rival_c')||5) };
         let marketState = 'neutral';
 
         // === AUTH ===
@@ -331,7 +330,7 @@
             const msg = document.getElementById('auth-msg');
 
             if(!user || !pass) return msg.innerText = "Inserisci credenziali";
-            msg.innerText = "Connessione in corso...";
+            msg.innerText = "Connessione...";
 
             try {
                 let { data, error } = await client.from('users').select('*').eq('username', user).eq('password', pass).maybeSingle();
@@ -344,13 +343,11 @@
                 
                 initApp();
                 playSound('success');
-
             } catch(e) {
                 msg.innerText = e.message;
                 playSound('alarm');
             }
         }
-
         function logout() { location.reload(); }
 
         // === INIT ===
@@ -376,33 +373,26 @@
                 globalData = data;
                 renderGrid();
             }
-            document.getElementById('last-update').innerText = new Date().toLocaleTimeString();
         }
 
-        // === RENDER ===
         function renderGrid() {
             const grid = document.getElementById('asset-grid');
             grid.innerHTML = '';
-            
-            let totalCap = 0;
-            let totalFlow = 0;
+            let totalCap = 0; let totalFlow = 0;
             const mult = getMultiplier();
 
             globalData.forEach(item => {
                 const isCorp = !item.owner_id;
                 const flow = Math.floor(item.current_value * (item.roi_rate * mult / 100));
-                
-                if(isCorp) {
-                    totalCap += item.current_value;
-                    if(item.status === 'Attivo') totalFlow += flow;
-                }
+                if(isCorp) { totalCap += item.current_value; if(item.status==='Attivo') totalFlow += flow; }
 
                 const ownerName = isCorp ? 'INK CORP' : (allUsers.find(u=>u.id===item.owner_id)?.username || '???');
                 const border = item.roi_rate < 0 ? 'border-red-900/50' : (isCorp ? 'border-slate-800' : 'border-amber-900/50');
                 const textCol = item.roi_rate < 0 ? 'text-red-400' : 'text-emerald-400';
 
+                // Fixed OnClick
                 const card = document.createElement('div');
-                card.className = `bg-slate-900/50 p-4 rounded border ${border} relative hover:bg-slate-900 transition-colors`;
+                card.className = `bg-slate-900/60 p-4 rounded border ${border} relative hover:bg-slate-900 transition-colors`;
                 card.innerHTML = `
                     <div class="flex justify-between mb-2">
                         <div class="text-[9px] text-slate-500 uppercase font-bold">${ownerName}</div>
@@ -415,7 +405,7 @@
                     </div>
                     <div class="flex justify-between items-center mt-2">
                         <div class="text-[10px] text-slate-400">Flow: ${flow>0?'+':''}${flow}</div>
-                        <button onclick="openEditModal(${item.id})" class="text-[10px] bg-slate-800 hover:bg-slate-700 text-white px-2 py-1 rounded border border-slate-700">GESTISCI</button>
+                        <button onclick="openEditModal(${item.id})" class="text-[10px] bg-slate-800 hover:bg-slate-700 text-white px-2 py-1 rounded border border-slate-700 z-10 relative cursor-pointer">GESTISCI</button>
                     </div>
                 `;
                 grid.appendChild(card);
@@ -425,8 +415,8 @@
             document.getElementById('total-dividends').innerText = (totalFlow>0?'+':'') + totalFlow.toLocaleString() + " GP";
         }
 
-        // === ACTIONS ===
-        function openModal(type) {
+        // === ASSET ACTIONS (FIXED) ===
+        window.openModal = function(type) {
             document.getElementById('edit-id').value = '';
             document.getElementById('edit-name').value = '';
             document.getElementById('edit-value').value = '';
@@ -438,18 +428,17 @@
 
             if(type === 'create-personal') {
                 document.getElementById('edit-owner').value = currentUser.id;
-                document.getElementById('edit-owner').disabled = true; // Lock to user
+                document.getElementById('edit-owner').disabled = true;
                 document.getElementById('modal-title').innerText = "Nuovo Asset Personale";
             } else {
                 document.getElementById('edit-owner').disabled = false;
             }
-
             document.getElementById('modal-edit').classList.remove('hidden');
         }
 
-        function openEditModal(id) {
+        window.openEditModal = function(id) {
             const item = globalData.find(i => i.id == id);
-            if(!item) return;
+            if(!item) return console.error("Asset not found:", id);
 
             document.getElementById('edit-id').value = item.id;
             document.getElementById('edit-name').value = item.name;
@@ -462,11 +451,10 @@
             
             document.getElementById('modal-title').innerText = "Modifica: " + item.name;
             document.getElementById('btn-delete').classList.remove('hidden');
-            
             document.getElementById('modal-edit').classList.remove('hidden');
         }
 
-        async function saveAsset() {
+        window.saveAsset = async function() {
             const id = document.getElementById('edit-id').value;
             const payload = {
                 name: document.getElementById('edit-name').value,
@@ -486,7 +474,7 @@
             logEvent(id ? `Asset Modificato: ${payload.name}` : `Creato Asset: ${payload.name}`, 'economy');
         }
 
-        async function deleteAsset() {
+        window.deleteAsset = async function() {
             const id = document.getElementById('edit-id').value;
             if(!confirm("Eliminare definitivamente?")) return;
             await client.from('investments').delete().eq('id', id);
@@ -495,8 +483,130 @@
             logEvent("Asset eliminato", 'alert');
         }
 
+        // === WAR ROOM (ENHANCED) ===
+        window.openWarRoom = function() {
+            document.getElementById('modal-war-room').classList.remove('hidden');
+            updateRivalsUI();
+        }
+
+        function updateRivalsUI() {
+            document.getElementById('war-b-val').innerText = rivals.B + "%";
+            document.getElementById('war-b-bar').style.width = rivals.B + "%";
+            document.getElementById('war-c-val').innerText = rivals.C + "%";
+            document.getElementById('war-c-bar').style.width = rivals.C + "%";
+            
+            document.getElementById('mini-bar-b').style.width = rivals.B + "%";
+            document.getElementById('mini-bar-c').style.width = rivals.C + "%";
+            
+            localStorage.setItem('rival_b', rivals.B);
+            localStorage.setItem('rival_c', rivals.C);
+        }
+
+        window.sabotage = function(team, type) {
+            const actions = {
+                'spy': { cost: 200, dmg: 5, label: 'Spionaggio' },
+                'sabotage': { cost: 500, dmg: 15, label: 'Sabotaggio' },
+                'cyber': { cost: 300, dmg: 10, label: 'Cyber Attacco' },
+                'hitman': { cost: 2000, dmg: 40, label: 'Eliminazione Bersaglio' }
+            };
+            const act = actions[type];
+            if(!confirm(`${act.label} su Team ${team}? Costo: ${act.cost} GP`)) return;
+
+            const roll = Math.floor(Math.random() * 100);
+            const success = roll > 30; // 70% chance
+
+            let msg = "";
+            const consoleDiv = document.getElementById('war-console');
+            
+            if(success) {
+                rivals[team] = Math.max(0, rivals[team] - act.dmg);
+                updateRivalsUI();
+                msg = `[SUCCESSO] ${act.label} vs Team ${team}. Danni: -${act.dmg}%`;
+                playSound('click');
+            } else {
+                msg = `[FALLIMENTO] ${act.label} vs Team ${team} sventato.`;
+                playSound('alarm');
+            }
+            
+            const line = document.createElement('div');
+            line.className = success ? 'text-emerald-500' : 'text-red-500';
+            line.innerText = `> ${msg}`;
+            consoleDiv.appendChild(line);
+            consoleDiv.scrollTop = consoleDiv.scrollHeight;
+            logEvent(msg, 'war');
+        }
+
+        // === MASTER CONTROL ===
+        window.masterSetRival = function(team) {
+            if(currentUser.role_level < 4) return alert("Solo MASTER");
+            const val = prompt(`Nuovo valore % per Team ${team}:`, rivals[team]);
+            if(val !== null) {
+                rivals[team] = parseInt(val);
+                updateRivalsUI();
+                logEvent(`Master override Team ${team} a ${val}%`, 'alert');
+            }
+        }
+
+        window.resetRivals = function() {
+            if(currentUser.role_level < 4) return alert("Solo MASTER");
+            if(confirm("Reset Totale War Room?")) {
+                rivals = { B: 0, C: 0 };
+                updateRivalsUI();
+                logEvent("Reset War Room eseguito", 'alert');
+            }
+        }
+
+        window.masterEvent = async function(type) {
+            if(currentUser.role_level < 4) return alert("Solo MASTER");
+            if(!confirm("Forzare evento globale? Impossibile annullare.")) return;
+            
+            let mult = type === 'crash' ? 0.9 : 1.1; // -10% or +10%
+            let label = type === 'crash' ? "CROLLO MERCATO" : "BOOM ECONOMICO";
+            
+            // Apply to ALL assets
+            const { error } = await client.rpc('multiply_assets', { factor: mult }); 
+            // Note: RPC would be ideal, but here we do client-side loop as fallback since we can't create RPC
+            for(let asset of globalData) {
+                await client.from('investments').update({ current_value: Math.floor(asset.current_value * mult) }).eq('id', asset.id);
+            }
+            
+            fetchAssets();
+            logEvent(`MASTER EVENT: ${label} applicato globalmente.`, 'alert');
+            playSound('boom');
+            alert("Mercato Aggiornato.");
+        }
+
+        // === REAL EVENTS SYSTEM ===
+        window.triggerEvent = async function() {
+            const events = [
+                { title: "Ispezione Fiscale", desc: "Multa corporativa del 5% sui valori.", type: 'bad', effect: (v) => Math.floor(v * 0.95) },
+                { title: "Contratto Governativo", desc: "I valori degli asset salgono del 5%.", type: 'good', effect: (v) => Math.floor(v * 1.05) },
+                { title: "Sciopero Dipendenti", desc: "Perdita di produttività (-2% Valore).", type: 'bad', effect: (v) => Math.floor(v * 0.98) },
+                { title: "Innovazione Tecnologica", desc: "Efficienza aumentata (+8% Valore).", type: 'good', effect: (v) => Math.floor(v * 1.08) }
+            ];
+
+            const ev = events[Math.floor(Math.random() * events.length)];
+            
+            // Show Modal
+            document.getElementById('event-title').innerText = ev.title;
+            document.getElementById('event-desc').innerText = ev.desc;
+            document.getElementById('event-effect').innerText = ev.type === 'good' ? "Bonus Applicato" : "Malus Applicato";
+            document.getElementById('event-icon').className = `text-6xl mb-4 ${ev.type==='good'?'text-emerald-500':'text-red-500'}`;
+            document.getElementById('event-icon').innerHTML = ev.type==='good' ? '<i class="fa-solid fa-arrow-trend-up"></i>' : '<i class="fa-solid fa-arrow-trend-down"></i>';
+            document.getElementById('modal-event').classList.remove('hidden');
+
+            playSound(ev.type === 'good' ? 'sfx-coin' : 'sfx-alarm');
+
+            // Apply Effect Real-time
+            for(let asset of globalData) {
+                await client.from('investments').update({ current_value: ev.effect(asset.current_value) }).eq('id', asset.id);
+            }
+            fetchAssets();
+            logEvent(`EVENTO: ${ev.title}`, ev.type==='good'?'economy':'alert');
+        }
+
         // === PROFILE ===
-        async function openProfile(uid) {
+        window.openProfile = async function(uid) {
             const { data: u } = await client.from('users').select('*').eq('id', uid).single();
             if(!u) return;
 
@@ -507,7 +617,6 @@
 
             const list = document.getElementById('prof-assets');
             list.innerHTML = '';
-            
             const myAssets = globalData.filter(a => a.owner_id === u.id);
             if(myAssets.length === 0) list.innerHTML = '<div class="col-span-2 text-slate-500 italic text-center text-xs py-4">Nessun asset.</div>';
 
@@ -515,76 +624,31 @@
                 const d = document.createElement('div');
                 d.className = "bg-slate-800 p-3 rounded border border-slate-700 flex justify-between items-center";
                 d.innerHTML = `
-                    <div>
-                        <div class="font-bold text-slate-200 text-xs">${a.name}</div>
-                        <div class="text-[10px] text-slate-500">${a.current_value} GP</div>
-                    </div>
+                    <div><div class="font-bold text-slate-200 text-xs">${a.name}</div><div class="text-[10px] text-slate-500">${a.current_value} GP</div></div>
                     <button onclick="closeModal('modal-profile'); openEditModal(${a.id})" class="text-xs bg-slate-700 hover:bg-slate-600 px-2 py-1 rounded text-white">Edit</button>
                 `;
                 list.appendChild(d);
             });
-
             document.getElementById('modal-profile').classList.remove('hidden');
         }
 
-        async function saveProfile() {
+        window.saveProfile = async function() {
             const bio = document.getElementById('prof-bio').value;
             await client.from('users').update({bio: bio}).eq('id', currentUser.id);
             alert("Dati salvati.");
         }
 
-        // === WAR ROOM & LOGS ===
-        function openWarRoom() {
-            document.getElementById('modal-war-room').classList.remove('hidden');
-            updateRivalsUI();
+        // UTILS
+        window.closeModal = function(id) { document.getElementById(id).classList.add('hidden'); }
+        function playSound(id) { document.getElementById(id)?.play().catch(()=>{}); }
+        function updateUserDisplay() {
+            document.getElementById('user-display').innerText = currentUser.username;
+            document.getElementById('user-balance-mini').innerText = (currentUser.balance||0).toLocaleString() + " GP";
         }
-
-        function updateRivalsUI() {
-            // Main modal bars
-            document.getElementById('war-b-val').innerText = rivals.B + "%";
-            document.getElementById('war-b-bar').style.width = rivals.B + "%";
-            document.getElementById('war-c-val').innerText = rivals.C + "%";
-            document.getElementById('war-c-bar').style.width = rivals.C + "%";
-
-            // Sidebar mini bars
-            document.getElementById('mini-bar-b').style.width = rivals.B + "%";
-            document.getElementById('mini-bar-c').style.width = rivals.C + "%";
-        }
-
-        function sabotage(team, type) {
-            const cost = type==='spy' ? 200 : 500;
-            if(!confirm(`Confermare ${type.toUpperCase()} su Team ${team}? Costo: ${cost}GP`)) return;
-
-            // Logic simulation
-            const roll = Math.floor(Math.random() * 100);
-            const success = roll > 30; 
-            
-            let msg = "";
-            if(success) {
-                const dmg = type==='spy' ? 5 : 15;
-                rivals[team] = Math.max(0, rivals[team] - dmg);
-                updateRivalsUI();
-                msg = `[SUCCESSO] ${type==='spy'?'Spionaggio':'Sabotaggio'} su Team ${team}. Danni inflitti.`;
-                playSound('click');
-            } else {
-                msg = `[FALLIMENTO] Operazione su Team ${team} fallita. Agenti scoperti.`;
-                playSound('alarm');
-            }
-
-            // Add to War Console
-            const consoleDiv = document.getElementById('war-console');
-            const line = document.createElement('div');
-            line.className = success ? 'text-emerald-500' : 'text-red-500';
-            line.innerText = `> ${msg}`;
-            consoleDiv.appendChild(line);
-            consoleDiv.scrollTop = consoleDiv.scrollHeight;
-
-            logEvent(msg, 'war');
-        }
-
-        async function logEvent(text, type='info') {
-            await client.from('audit_logs').insert([{ username: currentUser.username, action: text, type: type }]);
-            fetchLogs();
+        function getMultiplier() { return {'neutral':1, 'war':1.2, 'boom':1.5, 'crisis':0.5}[marketState]||1; }
+        window.updateWorldState = function() { marketState = document.getElementById('world-state').value; renderGrid(); }
+        window.collectDividends = function() {
+            alert("Funzione simulata: I valori vengono aggiornati nel database.");
         }
 
         async function fetchLogs() {
@@ -594,49 +658,18 @@
                 con.innerHTML = '';
                 data.forEach(l => {
                     const time = new Date(l.created_at).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
-                    let icon = 'fa-info-circle';
-                    let col = 'text-slate-400';
-                    
-                    if(l.type === 'war') { icon = 'fa-crosshairs'; col = 'text-red-400'; }
-                    if(l.type === 'economy') { icon = 'fa-coins'; col = 'text-amber-400'; }
-                    if(l.type === 'alert') { icon = 'fa-triangle-exclamation'; col = 'text-orange-500'; }
-
+                    let col = l.type === 'war' ? 'text-red-400' : (l.type === 'alert' ? 'text-orange-500' : 'text-slate-400');
                     const d = document.createElement('div');
-                    d.className = `border-l-2 border-slate-800 pl-2 py-1 ${col} text-[10px] font-mono leading-tight hover:bg-white/5`;
-                    d.innerHTML = `
-                        <div class="opacity-50 text-[9px] mb-0.5">${time} | ${l.username}</div>
-                        <div><i class="fa-solid ${icon} mr-1"></i> ${l.action}</div>
-                    `;
+                    d.className = `border-l-2 border-slate-800 pl-2 py-1 ${col} text-[10px] hover:bg-white/5`;
+                    d.innerHTML = `<div class="opacity-50 text-[9px] mb-0.5">${time} | ${l.username}</div><div>${l.action}</div>`;
                     con.appendChild(d);
                 });
             }
         }
-
-        // === UTILS ===
-        function updateUserDisplay() {
-            document.getElementById('user-display').innerText = currentUser.username;
-            document.getElementById('user-balance-mini').innerText = (currentUser.balance||0).toLocaleString() + " GP";
+        async function logEvent(text, type='info') {
+            await client.from('audit_logs').insert([{ username: currentUser.username, action: text, type: type }]);
+            fetchLogs();
         }
-        function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
-        function playSound(id) { document.getElementById('sfx-'+id)?.play().catch(()=>{}); }
-        function getMultiplier() { return {'neutral':1, 'war':1.2, 'boom':1.5, 'crisis':0.5}[marketState]||1; }
-        function updateWorldState() { marketState = document.getElementById('world-state').value; renderGrid(); }
-        async function runSimulation() {
-             if(currentUser.role_level < 2) return alert("Permessi insufficienti");
-             const roll = Math.floor(Math.random() * 100);
-             let msg = roll > 50 ? "Evento positivo: Mercati in rialzo." : "Evento negativo: Tasse straordinarie.";
-             logEvent(msg, 'economy');
-             alert(msg);
-        }
-        async function collectDividends() {
-            if(currentUser.role_level < 2) return alert("Permessi insufficienti");
-            if(!confirm("Incassare e chiudere la settimana?")) return;
-            // Simplified logic: just log it for now as per user request to handle flow visually
-            const total = document.getElementById('total-dividends').innerText;
-            logEvent(`Settimana chiusa. Totale flusso: ${total}`, 'economy');
-            alert("Flussi registrati.");
-        }
-
     </script>
 </body>
 </html>
