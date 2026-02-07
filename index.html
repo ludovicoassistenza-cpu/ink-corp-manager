@@ -3,375 +3,916 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ink Corp. | Tactical Terminal</title>
+    <title>Ink Corp. | Registro Ufficiale</title>
+    
+    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Supabase JS (V2) -->
     <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    
+    <!-- Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <!-- Font -->
     <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700;900&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 
     <style>
         :root {
             --bg-dark: #020617;
             --panel-bg: #0f172a;
-            --accent: #d97706;
-            --war-red: #ef4444;
-            --terminal-green: #22c55e;
+            --accent: #d97706; /* Amber */
+            --danger: #ef4444;
+            --success: #10b981;
         }
-        body { font-family: 'Inter', sans-serif; background-color: var(--bg-dark); color: #e2e8f0; }
-        .fantasy-font { font-family: 'Cinzel', serif; }
-        .glass-panel { background: rgba(15, 23, 42, 0.8); backdrop-filter: blur(12px); border: 1px solid rgba(51, 65, 85, 0.5); }
-        .war-card:hover { border-color: var(--war-red); box-shadow: 0 0 30px rgba(239, 68, 68, 0.3); transform: translateY(-2px); }
-        .terminal-text { font-family: 'Courier New', monospace; }
-        .transition-all { transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
-        
-        /* Animazione Radar */
-        .radar-ping {
-            position: absolute; width: 100%; height: 100%;
-            border: 2px solid rgba(239, 68, 68, 0.3); border-radius: 50%;
-            animation: ping 4s infinite;
-        }
-        @keyframes ping { 0% { transform: scale(0.1); opacity: 1; } 100% { transform: scale(1.5); opacity: 0; } }
 
-        .terminal-box {
-            background: #000;
-            border: 2px solid #1e293b;
-            box-shadow: 0 0 20px rgba(0,0,0,0.5);
-            position: relative;
+        body { 
+            font-family: 'Inter', sans-serif; 
+            background-color: var(--bg-dark);
+            background-image: 
+                linear-gradient(to bottom, rgba(2, 6, 23, 0.95), rgba(2, 6, 23, 0.95)),
+                url('https://www.transparenttextures.com/patterns/cubes.png');
+            color: #e2e8f0;
         }
-        .terminal-header {
-            background: #1e293b;
-            padding: 4px 12px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
+
+        h1, h2, h3, .fantasy-font { font-family: 'Cinzel', serif; letter-spacing: 0.05em; }
+
+        /* UI Components */
+        .glass-panel {
+            background: rgba(15, 23, 42, 0.7);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(51, 65, 85, 0.5);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3);
         }
+        
+        .action-btn {
+            transition: all 0.2s;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            font-weight: 700;
+        }
+        .action-btn:hover { transform: translateY(-1px); filter: brightness(110%); }
+        .action-btn:active { transform: translateY(0px); filter: brightness(90%); }
+        .action-btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: #0f172a; }
+        ::-webkit-scrollbar-thumb { background: #334155; border-radius: 3px; }
+        ::-webkit-scrollbar-thumb:hover { background: #475569; }
+
+        /* Loader */
+        .spinner {
+            width: 24px; height: 24px;
+            border: 3px solid #1e293b;
+            border-bottom-color: var(--accent);
+            border-radius: 50%;
+            display: inline-block;
+            animation: rotation 1s linear infinite;
+        }
+        @keyframes rotation { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+        /* Animations */
+        @keyframes pulse-glow { 0%, 100% { box-shadow: 0 0 5px var(--accent); } 50% { box-shadow: 0 0 20px var(--accent); } }
+        .glow { animation: pulse-glow 2s infinite; }
     </style>
 </head>
-<body class="h-screen overflow-hidden text-sm">
+<body class="h-screen flex flex-col overflow-hidden text-sm">
 
+    <!-- AUDIO SYSTEM -->
     <audio id="sfx-click" src="https://assets.mixkit.co/active_storage/sfx/2568/2568-preview.mp3"></audio>
+    <audio id="sfx-coin" src="https://assets.mixkit.co/active_storage/sfx/2003/2003-preview.mp3"></audio>
     <audio id="sfx-alarm" src="https://assets.mixkit.co/active_storage/sfx/995/995-preview.mp3"></audio>
+    <audio id="sfx-success" src="https://assets.mixkit.co/active_storage/sfx/1435/1435-preview.mp3"></audio>
 
-    <div id="login-screen" class="fixed inset-0 z-[100] flex items-center justify-center bg-[#020617]">
-        <div class="glass-panel p-8 rounded-xl w-full max-w-md text-center border-amber-500/20">
-            <h1 class="fantasy-font text-4xl text-amber-500 mb-6 tracking-widest underline decoration-amber-900/50">INK CORP.</h1>
-            <input type="text" id="login-user" class="w-full bg-slate-950 border border-slate-700 p-3 mb-4 rounded focus:border-amber-500 outline-none transition-all" placeholder="Operatore">
-            <input type="password" id="login-pass" class="w-full bg-slate-950 border border-slate-700 p-3 mb-6 rounded focus:border-amber-500 outline-none transition-all" placeholder="Password">
-            <button onclick="authLogin()" class="w-full bg-amber-600 py-3 rounded font-bold text-black hover:bg-amber-500 transition-all active:scale-95">ACCEDI AL TERMINALE</button>
-            <div id="auth-msg" class="mt-4 text-red-400 text-xs font-mono"></div>
+    <!-- LOGIN OVERLAY -->
+    <div id="login-screen" class="fixed inset-0 z-[100] flex items-center justify-center bg-[#020617] bg-[url('https://www.transparenttextures.com/patterns/dark-leather.png')]">
+        <div class="glass-panel w-full max-w-md p-8 rounded-xl shadow-2xl relative border-amber-500/20">
+            <div class="text-center mb-8">
+                <div class="w-20 h-20 bg-amber-500/10 rounded-full flex items-center justify-center mx-auto mb-4 border border-amber-500/50 shadow-[0_0_30px_rgba(217,119,6,0.2)]">
+                    <span class="text-3xl text-amber-500 fantasy-font font-bold">IC</span>
+                </div>
+                <h1 class="fantasy-font text-4xl text-amber-500 tracking-widest drop-shadow-md">INK CORP.</h1>
+                <p class="text-slate-500 text-xs uppercase tracking-[0.3em] mt-2">Terminal Access v8.1</p>
+            </div>
+
+            <!-- Login Fields -->
+            <div id="login-form" class="space-y-4">
+                <input type="text" id="login-user" class="w-full bg-slate-950/80 border border-slate-700 text-white px-4 py-3 rounded focus:border-amber-500 outline-none transition-colors" placeholder="Nome Utente">
+                <input type="password" id="login-pass" class="w-full bg-slate-950/80 border border-slate-700 text-white px-4 py-3 rounded focus:border-amber-500 outline-none transition-colors" placeholder="Password">
+                <button onclick="authLogin()" class="action-btn w-full bg-amber-600 hover:bg-amber-500 text-black py-3 rounded shadow-lg shadow-amber-900/20">ACCEDI AL SISTEMA</button>
+                <div class="text-center pt-4 border-t border-slate-800">
+                    <button onclick="toggleAuthMode()" class="text-xs text-emerald-500 hover:text-emerald-400 hover:underline tracking-widest uppercase">Nuova Recluta? Registrati</button>
+                </div>
+            </div>
+
+            <!-- Register Fields -->
+            <div id="register-form" class="space-y-4 hidden">
+                <div class="bg-emerald-900/20 text-emerald-400 p-2 text-center text-xs rounded border border-emerald-900/50">Codice Reclutamento Richiesto</div>
+                <input type="password" id="reg-code" class="w-full bg-slate-950/80 border border-emerald-800 text-emerald-400 px-4 py-3 rounded text-center uppercase tracking-widest outline-none focus:border-emerald-500" placeholder="CODICE (INK2025)">
+                <div class="h-px bg-slate-800 my-2"></div>
+                <input type="text" id="reg-user" class="w-full bg-slate-950/80 border border-slate-700 text-white px-4 py-2 rounded outline-none focus:border-emerald-500" placeholder="Scegli Username">
+                <input type="password" id="reg-pass" class="w-full bg-slate-950/80 border border-slate-700 text-white px-4 py-2 rounded outline-none focus:border-emerald-500" placeholder="Scegli Password">
+                <button onclick="authRegister()" class="action-btn w-full bg-emerald-700 hover:bg-emerald-600 text-white py-3 rounded shadow-lg">Crea Profilo</button>
+                <div class="text-center mt-2">
+                    <button onclick="toggleAuthMode()" class="text-xs text-slate-500 hover:text-slate-300">Torna al Login</button>
+                </div>
+            </div>
+            
+            <div id="auth-msg" class="text-center text-xs font-mono mt-4 min-h-[20px] text-red-400"></div>
         </div>
     </div>
 
-    <div id="app-interface" class="hidden h-full flex flex-col">
-        <header class="bg-slate-900 border-b border-slate-800 p-4 flex justify-between items-center shadow-xl">
-            <div class="flex items-center gap-4">
-                <div class="w-10 h-10 bg-amber-600 rounded flex items-center justify-center font-bold text-black fantasy-font text-lg shadow-inner">IC</div>
-                <div>
-                    <h2 class="fantasy-font text-xl text-amber-500 tracking-tighter leading-none">OPERATIONS BOARD</h2>
-                    <span class="text-[9px] text-slate-500 font-mono uppercase tracking-[0.2em]">Tactical Overview v4.2.1</span>
+    <!-- MAIN APP INTERFACE -->
+    <div id="app-interface" class="flex flex-col h-full hidden opacity-0 transition-opacity duration-500">
+        
+        <!-- HEADER -->
+        <header class="bg-slate-900/80 border-b border-slate-800 p-4 shadow-lg z-20">
+            <div class="container mx-auto max-w-7xl flex flex-col md:flex-row justify-between items-center gap-4">
+                <div class="flex items-center gap-4 cursor-pointer group" onclick="initApp()" title="Ricarica Dati">
+                    <div class="w-12 h-12 bg-gradient-to-br from-amber-700 to-amber-900 rounded flex items-center justify-center text-black font-bold text-xl border border-amber-500 shadow-md group-hover:scale-105 transition-transform fantasy-font">IC</div>
+                    <div>
+                        <h1 class="text-2xl text-amber-500 fantasy-font font-bold tracking-widest leading-none">INK CORP.</h1>
+                        <div class="flex items-center gap-2 text-[10px] mt-1">
+                            <span class="text-slate-500 uppercase tracking-widest">Operatore:</span>
+                            <span id="user-display" class="text-white font-bold">---</span>
+                            <span id="role-badge" class="px-1.5 py-0.5 rounded bg-slate-800 border border-slate-700 text-slate-400 text-[9px]">---</span>
+                        </div>
+                    </div>
                 </div>
-            </div>
-            <div class="flex gap-8 items-center">
-                <div class="text-right border-l border-slate-800 pl-8">
-                    <span class="text-[10px] text-slate-500 block font-bold uppercase">Capitale Disponibile</span>
-                    <span id="total-capital" class="text-emerald-500 font-mono font-bold text-xl tracking-tight">0 GP</span>
+
+                <div class="flex items-center gap-6">
+                    <div class="text-right">
+                        <label class="text-[9px] text-slate-500 uppercase font-bold block mb-1">Scenario</label>
+                        <select id="world-state" onchange="updateWorldState()" class="bg-slate-800 border border-slate-600 text-amber-500 text-xs rounded px-2 py-1 outline-none cursor-pointer">
+                            <option value="neutral">⚖️ Stabile</option>
+                            <option value="war">⚔️ Guerra</option>
+                            <option value="boom">💰 Boom Econ.</option>
+                            <option value="crisis">📉 Crisi</option>
+                        </select>
+                    </div>
+                    <div class="flex bg-slate-950 rounded border border-slate-800 overflow-hidden cursor-pointer hover:border-slate-600 transition-colors" onclick="masterEditCapital()">
+                        <div class="px-4 py-2 border-r border-slate-800">
+                            <div class="text-[9px] text-slate-500 uppercase font-bold">Capitale</div>
+                            <div id="total-capital" class="text-emerald-500 font-mono text-lg font-bold">---</div>
+                        </div>
+                        <div class="px-4 py-2 bg-slate-900/50 hover:bg-slate-800 transition-colors" onclick="event.stopPropagation(); collectDividends()">
+                            <div class="text-[9px] text-slate-500 uppercase font-bold">Dividendi</div>
+                            <div id="total-dividends" class="text-cyan-500 font-mono text-lg font-bold">---</div>
+                        </div>
+                    </div>
                 </div>
-                <button onclick="logout()" class="bg-slate-800 hover:bg-red-900/40 text-slate-400 hover:text-red-500 px-4 py-2 rounded transition-all text-xs border border-slate-700 font-bold">LOGOUT</button>
             </div>
         </header>
 
-        <main class="flex-grow p-6 grid grid-cols-12 gap-6 overflow-hidden bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')]">
+        <!-- MAIN CONTENT -->
+        <div class="flex-grow container mx-auto max-w-7xl p-4 grid grid-cols-12 gap-6 overflow-hidden">
             
-            <div class="col-span-12 md:col-span-3 space-y-4">
-                <div onclick="toggleWarRoom(true)" class="terminal-box rounded-xl border-red-900/50 cursor-pointer transition-all overflow-hidden group">
-                    <div class="terminal-header">
-                        <span class="text-[9px] font-bold text-red-400 tracking-widest">TACTICAL_TERMINAL_01</span>
-                        <div class="flex gap-1">
-                            <div class="w-2 h-2 rounded-full bg-red-900"></div>
-                            <div class="w-2 h-2 rounded-full bg-red-500 animate-pulse"></div>
-                        </div>
-                    </div>
-                    <div class="p-6 relative">
-                        <div class="radar-ping"></div>
-                        <div class="relative z-10 text-center py-4">
-                            <span class="text-red-500 text-5xl block mb-3 drop-shadow-[0_0_10px_rgba(239,68,68,0.5)]">⚔️</span>
-                            <h3 class="fantasy-font text-red-500 text-2xl tracking-widest">WAR ROOM</h3>
-                            <p class="text-[10px] text-slate-500 font-mono uppercase tracking-widest mt-2">Engage Rivals Section</p>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="terminal-box rounded-xl border-slate-800 overflow-hidden h-72">
-                    <div class="terminal-header bg-slate-800">
-                        <span class="text-[9px] font-bold text-slate-400">INTEL_FEED_LIVE</span>
-                    </div>
-                    <div id="audit-log" class="p-4 overflow-y-auto text-[10px] font-mono space-y-2 text-emerald-500/80 bg-[#000500] h-full"></div>
-                </div>
-            </div>
-
-            <div class="col-span-12 md:col-span-9 flex flex-col">
-                <div class="flex justify-between items-end mb-6 border-b border-slate-800 pb-2">
-                    <h3 class="fantasy-font text-2xl text-slate-300">ASSET & OPERATIONS</h3>
-                    <button onclick="openModal('create')" class="bg-emerald-900/20 border border-emerald-500/40 px-6 py-2 rounded text-emerald-400 text-xs font-bold hover:bg-emerald-500 hover:text-black transition-all">+ NUOVA INIZIATIVA</button>
-                </div>
-                <div id="asset-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 overflow-y-auto pb-10 pr-2 custom-scrollbar">
-                </div>
-            </div>
-        </main>
-    </div>
-
-    <div id="war-room-overlay" class="fixed inset-0 z-50 bg-[#020617] hidden opacity-0 transition-opacity duration-300 flex flex-col">
-        <div class="p-6 bg-red-950/30 border-b border-red-900/50 flex justify-between items-center shadow-2xl">
-            <div>
-                <h1 class="fantasy-font text-4xl text-red-600 animate-pulse tracking-tighter">WAR ROOM :: TACTICAL OVERRIDE</h1>
-                <p class="text-[10px] text-red-900 font-bold uppercase tracking-[0.4em] font-mono">Protocollo Black-Ops Attivo | Autorizzazione Livello 5</p>
-            </div>
-            <button onclick="toggleWarRoom(false)" class="bg-slate-900 border border-red-900 text-red-500 hover:bg-red-900 hover:text-white px-10 py-3 rounded font-black transition-all tracking-widest">DISENGAGE</button>
-        </div>
-
-        <div class="flex-grow p-12 grid grid-cols-12 gap-12 overflow-y-auto">
-            <div class="col-span-12 md:col-span-6 terminal-box border-red-900/40 rounded-3xl p-8 bg-gradient-to-br from-black to-red-950/10">
-                <div class="flex justify-between items-center mb-8">
-                    <div>
-                        <h2 class="fantasy-font text-3xl text-red-400">IRON SYNDICATE</h2>
-                        <span class="text-[9px] font-mono text-red-900">IDENTIFIER: TEAM_B</span>
-                    </div>
-                    <span id="war-val-b" class="font-mono text-5xl text-red-600 drop-shadow-[0_0_15px_rgba(220,38,38,0.5)]">0%</span>
-                </div>
-                <div class="w-full bg-slate-950 h-6 rounded-full border border-red-900 mb-10 overflow-hidden shadow-inner p-1">
-                    <div id="war-bar-b" class="h-full bg-gradient-to-r from-red-900 to-red-500 transition-all duration-1000 rounded-full"></div>
-                </div>
+            <!-- LEFT PANEL: Rivals & Actions (3 cols) -->
+            <div class="col-span-12 md:col-span-3 flex flex-col gap-4 overflow-y-auto pb-4 pr-1">
                 
-                <div class="grid grid-cols-2 gap-4 font-mono">
-                    <button onclick="executeWarAction('B', 'sabotage', 500)" class="p-6 bg-black border border-red-900/50 rounded-xl hover:border-red-500 hover:bg-red-950/30 group transition-all">
-                        <span class="block text-2xl mb-2">🔥</span>
-                        <span class="font-bold text-red-400 block text-sm">SABOTAGGIO</span>
-                        <span class="text-[9px] text-slate-600">-500 GP | -15% Rivali</span>
-                    </button>
-                    <button onclick="executeWarAction('B', 'spy', 200)" class="p-6 bg-black border border-red-900/50 rounded-xl hover:border-red-500 hover:bg-red-950/30 transition-all">
-                        <span class="block text-2xl mb-2">👁️</span>
-                        <span class="font-bold text-red-400 block text-sm">SPIONAGGIO</span>
-                        <span class="text-[9px] text-slate-600">-200 GP | Analisi ROI</span>
-                    </button>
-                    <button onclick="executeWarAction('B', 'hack', 1000)" class="p-6 bg-black border border-red-900/50 rounded-xl hover:border-red-500 hover:bg-red-950/30 transition-all col-span-2">
-                        <span class="block text-2xl mb-2">💻</span>
-                        <span class="font-bold text-red-400 block text-sm">CYBER ATTACCO</span>
-                        <span class="text-[9px] text-slate-600">-1000 GP | Reset Totale</span>
-                    </button>
-                </div>
-            </div>
-
-            <div class="col-span-12 md:col-span-6 terminal-box border-amber-900/40 rounded-3xl p-8 bg-gradient-to-br from-black to-amber-950/10">
-                <div class="flex justify-between items-center mb-8">
-                    <div>
-                        <h2 class="fantasy-font text-3xl text-amber-500">GILDED HAND</h2>
-                        <span class="text-[9px] font-mono text-amber-900">IDENTIFIER: TEAM_C</span>
+                <!-- MASTER PANEL (Hidden) -->
+                <div id="master-panel" class="hidden glass-panel p-4 rounded border-purple-900/50 bg-slate-900/50 relative overflow-hidden">
+                    <div class="absolute inset-0 border border-purple-500/20 rounded pointer-events-none"></div>
+                    <h3 class="text-xs font-bold text-purple-400 uppercase mb-3 flex items-center gap-2">
+                        <span class="text-lg">⚡</span> Gran Master Control
+                    </h3>
+                    <div class="grid grid-cols-2 gap-2">
+                        <button onclick="openUserManager()" class="action-btn py-2 bg-purple-900/30 hover:bg-purple-900/50 border border-purple-700 text-purple-300 text-[10px] rounded col-span-2">Gestione Utenti</button>
+                        <button onclick="resetRivals()" class="action-btn py-2 bg-slate-900 hover:bg-slate-800 border border-slate-700 text-slate-400 text-[10px] rounded col-span-2">Reset Rivals 0%</button>
                     </div>
-                    <span id="war-val-c" class="font-mono text-5xl text-amber-600 drop-shadow-[0_0_15px_rgba(217,119,6,0.5)]">0%</span>
                 </div>
-                <div class="w-full bg-slate-950 h-6 rounded-full border border-amber-900 mb-10 overflow-hidden shadow-inner p-1">
-                    <div id="war-bar-c" class="h-full bg-gradient-to-r from-amber-900 to-amber-500 transition-all duration-1000 rounded-full"></div>
+
+                <!-- RIVALS -->
+                <div class="glass-panel p-4 rounded bg-gradient-to-b from-slate-900 to-red-950/20 border-red-900/30">
+                    <h3 class="text-xs font-bold text-red-500 uppercase mb-3 tracking-widest flex justify-between">
+                        Rivali Attivi <span class="animate-pulse text-red-500">●</span>
+                    </h3>
+                    
+                    <!-- Team B -->
+                    <div class="mb-3 group">
+                        <div class="flex justify-between text-[10px] font-bold mb-1">
+                            <span class="text-red-400">TEAM B</span>
+                            <span id="rival-b-val" class="text-red-400 font-mono">0%</span>
+                        </div>
+                        <div class="w-full bg-slate-950 h-2 rounded-full overflow-hidden border border-red-900/30 cursor-pointer" onclick="masterEditRival('B')">
+                            <div id="rival-b-bar" class="h-full bg-red-600 transition-all duration-1000 w-0"></div>
+                        </div>
+                        <button onclick="sabotage('B')" class="action-btn w-full mt-1 py-1 bg-red-950/50 hover:bg-red-900/50 border border-red-900/40 text-red-400 text-[9px] rounded">Sabota (500gp)</button>
+                    </div>
+
+                    <!-- Team C -->
+                    <div class="group">
+                        <div class="flex justify-between text-[10px] font-bold mb-1">
+                            <span class="text-orange-400">TEAM C</span>
+                            <span id="rival-c-val" class="text-orange-400 font-mono">0%</span>
+                        </div>
+                        <div class="w-full bg-slate-950 h-2 rounded-full overflow-hidden border border-orange-900/30 cursor-pointer" onclick="masterEditRival('C')">
+                            <div id="rival-c-bar" class="h-full bg-orange-600 transition-all duration-1000 w-0"></div>
+                        </div>
+                        <button onclick="sabotage('C')" class="action-btn w-full mt-1 py-1 bg-orange-950/50 hover:bg-orange-900/50 border border-orange-900/40 text-orange-400 text-[9px] rounded">Sabota (500gp)</button>
+                    </div>
                 </div>
+
+                <!-- ACTIONS -->
+                <div class="grid grid-cols-1 gap-2">
+                    <button id="btn-create" onclick="openModal('create')" class="action-btn py-3 px-4 bg-slate-800 hover:bg-slate-700 border border-slate-600 rounded flex items-center gap-3 text-left">
+                        <span class="text-xl text-emerald-500">✚</span>
+                        <div><div class="text-sm font-bold text-slate-200">Nuova Impresa</div><div class="text-[10px] text-slate-500 font-normal">Crea Asset</div></div>
+                    </button>
+                    <button id="btn-sim" onclick="runSimulation()" class="action-btn py-3 px-4 bg-slate-800 hover:bg-slate-700 border border-slate-600 rounded flex items-center gap-3 text-left">
+                        <span class="text-xl text-purple-500">🎲</span>
+                        <div><div class="text-sm font-bold text-slate-200">Evento Casuale</div><div class="text-[10px] text-slate-500 font-normal">Tira d100</div></div>
+                    </button>
+                </div>
+
+                <!-- AUDIT LOG -->
+                <div class="glass-panel flex-grow flex flex-col p-0 rounded overflow-hidden h-60">
+                    <div class="bg-slate-950 p-2 border-b border-slate-800 text-[10px] font-bold text-slate-500 uppercase tracking-widest">
+                        Registro Eventi
+                    </div>
+                    <div id="audit-log" class="p-2 overflow-y-auto flex-col-reverse flex gap-1 h-full font-mono text-[10px] text-slate-400">
+                        <!-- Logs here -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- RIGHT PANEL: Dashboard (9 cols) -->
+            <div class="col-span-12 md:col-span-9 flex flex-col h-full relative">
+                <!-- Chart Area -->
+                <div class="h-40 bg-slate-900/50 rounded border border-slate-800 p-2 mb-4 flex items-center justify-center shadow-inner">
+                    <canvas id="riskChart" style="max-height: 100%; max-width: 100%;"></canvas>
+                </div>
+
+                <!-- Loading State -->
+                <div id="loader" class="absolute inset-0 z-10 flex flex-col items-center justify-center bg-slate-950/80 backdrop-blur-sm rounded">
+                    <div class="spinner mb-2"></div>
+                    <div class="text-amber-500 text-xs font-mono animate-pulse">CARICAMENTO DATI...</div>
+                </div>
+
+                <!-- Grid -->
+                <div id="asset-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 overflow-y-auto pr-2 pb-20 content-start h-full">
+                    <!-- Assets here -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- === MODALS === -->
+
+    <!-- EDIT ASSET -->
+    <div id="modal-edit" class="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm hidden">
+        <div class="bg-slate-900 border border-slate-700 w-full max-w-3xl rounded-xl shadow-2xl flex flex-col md:flex-row overflow-hidden">
+            <div class="p-6 md:w-1/2 border-r border-slate-700 flex flex-col gap-4">
+                <h3 class="fantasy-font text-xl text-white border-b border-slate-700 pb-2">Gestione Asset</h3>
+                <input type="hidden" id="edit-id">
                 
-                <div class="grid grid-cols-2 gap-4 font-mono">
-                    <button onclick="executeWarAction('C', 'sabotage', 500)" class="p-6 bg-black border border-amber-900/50 rounded-xl hover:border-amber-500 hover:bg-amber-950/30 transition-all">
-                        <span class="block text-2xl mb-2">🧨</span>
-                        <span class="font-bold text-amber-500 block text-sm">SABOTAGGIO</span>
-                        <span class="text-[9px] text-slate-600">-500 GP</span>
-                    </button>
-                    <button onclick="executeWarAction('C', 'propaganda', 300)" class="p-6 bg-black border border-amber-900/50 rounded-xl hover:border-amber-500 hover:bg-amber-950/30 transition-all">
-                        <span class="block text-2xl mb-2">📢</span>
-                        <span class="font-bold text-amber-500 block text-sm">PROPAGANDA</span>
-                        <span class="text-[9px] text-slate-600">-300 GP</span>
-                    </button>
-                    <button onclick="executeWarAction('C', 'hostile-takeover', 2000)" class="p-6 bg-black border border-amber-900/50 rounded-xl hover:border-amber-500 hover:bg-amber-950/30 transition-all col-span-2">
-                        <span class="block text-2xl mb-2">🤝</span>
-                        <span class="font-bold text-amber-500 block text-sm">SCALATA OSTILE</span>
-                        <span class="text-[9px] text-slate-600">-2000 GP | Assorbimento Asset</span>
-                    </button>
+                <div>
+                    <label class="text-[10px] font-bold text-slate-500 uppercase">Nome</label>
+                    <input type="text" id="edit-name" class="w-full bg-slate-800 border border-slate-600 rounded p-2 text-amber-500 font-bold outline-none focus:border-amber-500">
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="text-[10px] font-bold text-slate-500 uppercase">Valore (GP)</label>
+                        <input type="number" id="edit-value" class="w-full bg-slate-800 border border-slate-600 rounded p-2 text-emerald-400 font-mono font-bold outline-none">
+                    </div>
+                    <div>
+                        <label class="text-[10px] font-bold text-slate-500 uppercase">ROI (%)</label>
+                        <input type="number" step="0.1" id="edit-roi" class="w-full bg-slate-800 border border-slate-600 rounded p-2 text-cyan-400 font-mono outline-none">
+                    </div>
+                </div>
+                <div>
+                    <label class="text-[10px] font-bold text-slate-500 uppercase">Stato</label>
+                    <select id="edit-status" class="w-full bg-slate-800 border border-slate-600 rounded p-2 text-white outline-none">
+                        <option value="Attivo">Attivo</option>
+                        <option value="In attesa">In attesa</option>
+                        <option value="Liquidato">Liquidato</option>
+                    </select>
+                </div>
+                <div class="flex-grow">
+                    <label class="text-[10px] font-bold text-slate-500 uppercase">Note</label>
+                    <textarea id="edit-desc" class="w-full h-20 bg-slate-800 border border-slate-600 rounded p-2 text-slate-300 text-xs outline-none resize-none"></textarea>
+                </div>
+
+                <div id="edit-actions" class="grid grid-cols-2 gap-2">
+                    <button onclick="saveAssetChanges()" class="action-btn py-2 bg-amber-700 hover:bg-amber-600 text-white rounded shadow-lg">Salva</button>
+                    <button onclick="deleteAssetConfirm()" class="action-btn py-2 bg-red-900/50 hover:bg-red-900 text-red-400 border border-red-800 rounded">Elimina 🗑</button>
+                </div>
+                <div id="view-only-msg" class="hidden text-center text-xs text-slate-600 italic mt-2">Modalità Sola Lettura</div>
+            </div>
+
+            <div class="p-6 md:w-1/2 bg-slate-950 flex flex-col gap-4">
+                <h3 class="fantasy-font text-xl text-white border-b border-slate-700 pb-2 flex items-center gap-2"><span>⚡</span> Upgrades</h3>
+                <div id="upgrade-list" class="space-y-2 overflow-y-auto max-h-[300px]">
+                    <div onclick="buyUpgrade('security')" class="p-3 border border-slate-800 rounded hover:bg-slate-900 cursor-pointer group transition-colors">
+                        <div class="flex justify-between text-xs font-bold text-slate-300 group-hover:text-white"><span>Mercenari (Risk: Basso)</span><span class="text-amber-500">-500gp</span></div>
+                        <p class="text-[10px] text-slate-500">Sicurezza armata.</p>
+                    </div>
+                    <div onclick="buyUpgrade('automation')" class="p-3 border border-slate-800 rounded hover:bg-slate-900 cursor-pointer group transition-colors">
+                        <div class="flex justify-between text-xs font-bold text-slate-300 group-hover:text-white"><span>Automazione (ROI +2%)</span><span class="text-amber-500">-1000gp</span></div>
+                        <p class="text-[10px] text-slate-500">Efficienza magica.</p>
+                    </div>
+                    <div onclick="buyUpgrade('marketing')" class="p-3 border border-slate-800 rounded hover:bg-slate-900 cursor-pointer group transition-colors">
+                        <div class="flex justify-between text-xs font-bold text-slate-300 group-hover:text-white"><span>Fama (Valore +10%)</span><span class="text-amber-500">-750gp</span></div>
+                        <p class="text-[10px] text-slate-500">Propaganda in città.</p>
+                    </div>
+                </div>
+                <button onclick="closeModal('modal-edit')" class="mt-auto py-2 border border-slate-600 text-slate-400 hover:text-white rounded text-xs uppercase font-bold">Chiudi</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- CREATE MODAL -->
+    <div id="modal-create" class="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm hidden">
+        <div class="bg-slate-900 border border-emerald-800 w-full max-w-md rounded-xl shadow-2xl p-6">
+            <h3 class="fantasy-font text-xl text-emerald-500 mb-4">Nuova Impresa</h3>
+            <div class="space-y-3">
+                <input type="text" id="new-name" class="w-full bg-slate-800 border border-slate-600 rounded p-2 text-white outline-none focus:border-emerald-500" placeholder="Nome Attività">
+                <textarea id="new-desc" class="w-full bg-slate-800 border border-slate-600 rounded p-2 text-slate-300 text-xs outline-none resize-none" placeholder="Descrizione..."></textarea>
+                <div class="grid grid-cols-2 gap-3">
+                    <input type="number" id="new-val" class="bg-slate-800 border border-slate-600 rounded p-2 text-white outline-none" placeholder="Costo GP">
+                    <input type="number" step="0.1" id="new-roi" class="bg-slate-800 border border-slate-600 rounded p-2 text-white outline-none" placeholder="ROI %" value="5.0">
+                </div>
+                <select id="new-risk" class="w-full bg-slate-800 border border-slate-600 rounded p-2 text-white outline-none">
+                    <option value="Basso">Rischio Basso</option>
+                    <option value="Medio" selected>Rischio Medio</option>
+                    <option value="Alto">Rischio Alto</option>
+                    <option value="Criminale">Criminale</option>
+                </select>
+                <div class="flex gap-2 pt-2">
+                    <button onclick="closeModal('modal-create')" class="flex-1 py-2 border border-slate-600 text-slate-400 rounded hover:text-white">Annulla</button>
+                    <button onclick="executeCreate()" class="flex-1 py-2 bg-emerald-700 hover:bg-emerald-600 text-white font-bold rounded shadow-lg">Firma</button>
                 </div>
             </div>
         </div>
     </div>
 
-    <div id="modal-manage" class="fixed inset-0 z-[60] bg-black/95 hidden flex items-center justify-center p-4 backdrop-blur-sm">
-        <div class="terminal-box border-emerald-900 p-0 rounded-2xl max-w-lg w-full overflow-hidden shadow-[0_0_50px_rgba(16,185,129,0.1)]">
-            <div class="terminal-header bg-emerald-950/50">
-                <span class="text-[10px] font-bold text-emerald-500 fantasy-font uppercase tracking-[0.3em]">Gestione Operativa Asset</span>
-                <button onclick="closeModal('modal-manage')" class="text-emerald-900 hover:text-emerald-500 font-black text-xl">×</button>
+    <!-- USER MANAGER (MASTER) -->
+    <div id="modal-users" class="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm hidden">
+        <div class="bg-slate-900 border border-purple-800 w-full max-w-lg rounded-xl shadow-2xl p-6">
+            <h3 class="fantasy-font text-xl text-purple-500 mb-4 border-b border-purple-900 pb-2">Gestione Personale (Master)</h3>
+            <div id="user-list-container" class="space-y-2 max-h-80 overflow-y-auto mb-4 min-h-[100px]">
+                <!-- User list injected here -->
             </div>
-            <div class="p-8">
-                <div id="manage-content"></div>
-                <div class="mt-8 flex gap-4 font-mono">
-                    <button onclick="closeModal('modal-manage')" class="flex-1 border border-slate-700 p-3 rounded hover:bg-slate-800 transition-all text-slate-400 text-xs font-bold uppercase">Esci</button>
-                    <button onclick="alert('Funzione non ancora implementata: Upgrade')" class="flex-1 bg-emerald-700 p-3 rounded font-black text-black hover:bg-emerald-500 transition-all text-xs uppercase">Potenzia Asset</button>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <div id="modal-create" class="fixed inset-0 z-[60] bg-black/95 hidden flex items-center justify-center p-4 backdrop-blur-sm">
-        <div class="terminal-box border-emerald-900 p-0 rounded-2xl max-w-sm w-full overflow-hidden">
-            <div class="terminal-header bg-emerald-950/50">
-                <span class="text-[10px] font-bold text-emerald-500 fantasy-font">Nuova Iniziativa</span>
-                <button onclick="closeModal('modal-create')" class="text-emerald-900 hover:text-emerald-500 font-black text-xl">×</button>
-            </div>
-            <div class="p-8">
-                <input type="text" id="new-name" class="w-full bg-slate-950 border border-slate-800 p-3 mb-4 rounded font-mono text-emerald-500 outline-none focus:border-emerald-500" placeholder="[NOME_IMPRESA]">
-                <input type="number" id="new-val" class="w-full bg-slate-950 border border-slate-800 p-3 mb-6 rounded font-mono text-emerald-500 outline-none focus:border-emerald-500" placeholder="[BUDGET_GP]">
-                <div class="flex gap-2 font-mono">
-                    <button onclick="executeCreate()" class="flex-1 bg-emerald-700 p-3 rounded font-black text-black hover:bg-emerald-500 transition-all text-xs uppercase tracking-widest">Inizializza</button>
-                </div>
+            <div class="flex justify-end">
+                <button onclick="closeModal('modal-users')" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-white rounded text-xs font-bold uppercase">Chiudi</button>
             </div>
         </div>
     </div>
 
     <script>
+        // === CONFIGURATION ===
         const SUPABASE_URL = 'https://mazammutcogkxhugfwqm.supabase.co';
-        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1hemFtbXV0Y29na3hodWdmd3FtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njk4NjAwOTIsImV4cCI6MjA4NTQzNjA5Mn0.u99CFeecPwJrHYIUJv7miDSWoDUGJpg9S7MuaK_hMvM';
-        const client = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1hemFtbXV0Y29na3hodWdmd3FtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzgzNDE1MTIsImV4cCI6MjA1MzkxNzUxMn0.Z9fWoTqJDHOcM2iEhZNH6zYHlJQ8bW6T3Rr7uZ3gY_4';
+        
+        let client;
+        try {
+            client = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+            console.log("Supabase Client Initialized");
+        } catch(e) {
+            console.error("Supabase Init Error:", e);
+            alert("Errore critico: Impossibile connettersi al database. Ricarica la pagina.");
+        }
+        
+        const RECRUIT_CODE = "INK2025";
+        
+        // State
+        let currentUser = null; // { id, username, role_level }
+        let globalData = [];
+        let marketState = 'neutral';
+        let rivals = {
+            B: parseInt(localStorage.getItem('ic_rival_b') || "15"),
+            C: parseInt(localStorage.getItem('ic_rival_c') || "5")
+        };
+        let chartInstance = null;
 
-        let currentUser = null;
-        let rivals = { B: 15, C: 5 };
-        let allAssets = [];
-
+        // === AUTH ===
         async function authLogin() {
-            const user = document.getElementById('login-user').value;
-            const pass = document.getElementById('login-pass').value;
-            const { data, error } = await client.from('users').select('*').eq('username', user).eq('password', pass).single();
+        const user = document.getElementById('login-user').value.trim();
+        const pass = document.getElementById('login-pass').value.trim();
+        const msg = document.getElementById('auth-msg');
+
+        console.log('Login attempt for:', user);
+
+        if(!user || !pass) {
+            msg.innerText = "Inserisci credenziali.";
+            return;
+        }
+
+        msg.innerText = "Verifica in corso...";
+
+        try {
+            console.log('Querying Supabase for user:', user);
             
-            if (data) {
-                currentUser = data;
-                document.getElementById('login-screen').classList.add('hidden');
-                document.getElementById('app-interface').classList.remove('hidden');
+            const { data, error } = await client
+                .from('users')
+                .select('*')
+                .eq('username', user)
+                .eq('password', pass)
+                .maybeSingle();
+
+            console.log('Query result:', { data, error });
+
+            if(error) {
+                console.error('Login Error:', error);
+                msg.innerText = "ERRORE: " + error.message;
+                return;
+            }
+
+            if(!data) {
+                console.log('No user found with these credentials');
+                msg.innerText = "ACCESSO NEGATO: Credenziali invalide";
+                return;
+            }
+
+            console.log('Login successful for:', data);
+            msg.innerText = "Accesso concesso!";
+
+            currentUser = data;
+            document.getElementById('login-screen').classList.add('hidden');
+            document.getElementById('app-interface').classList.remove('hidden');
+            document.getElementById('app-interface').classList.remove('opacity-0');
+
+            playSound('success');
+            updateUserDisplay();
+
+        } catch(e) {
+            console.error('Unexpected error:', e);
+            msg.innerText = "ERRORE CRITICO: " + e.message;
+        }
+    }
                 initApp();
-            } else {
-                document.getElementById('auth-msg').innerText = "ERRORE: Accesso negato. Credenziali non valide.";
-            }
-        }
+                logEvent(`Login effettuato.`, 'info');
 
-        function toggleWarRoom(show) {
-            const overlay = document.getElementById('war-room-overlay');
-            playSound(show ? 'alarm' : 'click');
-            if(show) {
-                overlay.classList.remove('hidden');
-                setTimeout(() => overlay.classList.remove('opacity-0'), 10);
-                updateWarUI();
-            } else {
-                overlay.classList.add('opacity-0');
-                setTimeout(() => overlay.classList.add('hidden'), 300);
-            }
-        }
-
-        function updateWarUI() {
-            document.getElementById('war-bar-b').style.width = rivals.B + "%";
-            document.getElementById('war-val-b').innerText = rivals.B + "%";
-            document.getElementById('war-bar-c').style.width = rivals.C + "%";
-            document.getElementById('war-val-c').innerText = rivals.C + "%";
-            if(document.getElementById('mini-bar-b')) document.getElementById('mini-bar-b').style.width = rivals.B + "%";
-            if(document.getElementById('mini-bar-c')) document.getElementById('mini-bar-c').style.width = rivals.C + "%";
-        }
-
-        async function executeWarAction(team, type, cost) {
-            if(confirm(`AUTORIZZAZIONE RICHIESTA: Confermi operazione ${type.toUpperCase()}? Costo: ${cost} GP`)) {
-                if(type === 'sabotage') rivals[team] = Math.max(0, rivals[team] - 15);
-                if(type === 'hack') rivals[team] = 0;
-                if(type === 'hostile-takeover') {
-                    rivals[team] = 0;
-                    alert("OPERAZIONE COMPLETATA: Asset nemici acquisiti.");
-                }
-                updateWarUI();
-                await logEvent(`[WARROOM] ${type.toUpperCase()} VS TEAM ${team}`, 'error');
+            } catch(e) {
+                console.error(e);
+                msg.innerText = e.message;
                 playSound('alarm');
             }
         }
 
-        async function initApp() {
-            const { data } = await client.from('investments').select('*');
-            allAssets = data;
-            renderGrid(data);
-            fetchLogs();
-            updateWarUI();
+        function toggleAuthMode() {
+            document.getElementById('login-form').classList.toggle('hidden');
+            document.getElementById('register-form').classList.toggle('hidden');
+            document.getElementById('auth-msg').innerText = "";
         }
 
-        function renderGrid(data) {
-            const grid = document.getElementById('asset-grid');
-            grid.innerHTML = '';
-            let total = 0;
-            data.forEach((item, index) => {
-                total += item.current_value;
-                const card = document.createElement('div');
-                card.className = "terminal-box p-5 rounded-xl border-slate-800 hover:border-emerald-900 transition-all";
-                card.innerHTML = `
-                    <div class="flex justify-between items-start mb-3">
-                        <h4 class="fantasy-font text-lg text-slate-200 tracking-tight">${item.name}</h4>
-                        <span class="text-xs bg-emerald-900/30 text-emerald-500 px-2 py-0.5 rounded font-mono">ATTIVO</span>
-                    </div>
-                    <div class="grid grid-cols-2 gap-2 mb-4">
-                        <div class="bg-black/40 p-2 rounded border border-slate-900">
-                            <span class="text-[8px] text-slate-600 block uppercase font-mono">Valore Attuale</span>
-                            <span class="text-emerald-500 font-mono text-sm">${item.current_value.toLocaleString()} GP</span>
-                        </div>
-                        <div class="bg-black/40 p-2 rounded border border-slate-900">
-                            <span class="text-[8px] text-slate-600 block uppercase font-mono">Performance ROI</span>
-                            <span class="text-emerald-500 font-mono text-sm">${item.roi_rate}%</span>
-                        </div>
-                    </div>
-                    <button onclick="openEditModal(${item.id})" class="w-full bg-slate-800 hover:bg-emerald-900/40 text-slate-400 hover:text-emerald-400 py-2 rounded text-[10px] font-bold uppercase transition-all border border-slate-700">Gestisci Operazioni</button>
-                `;
-                grid.appendChild(card);
-            });
-            document.getElementById('total-capital').innerText = total.toLocaleString() + " GP";
-        }
+        async function authRegister() {
+            const code = document.getElementById('reg-code').value.trim();
+            const user = document.getElementById('reg-user').value.trim();
+            const pass = document.getElementById('reg-pass').value.trim();
+            const msg = document.getElementById('auth-msg');
 
-        function openEditModal(index) {
-            const asset = allAssets[index];
-            const content = document.getElementById('manage-content');
-            content.innerHTML = `
-                <div class="space-y-6">
-                    <div>
-                        <h2 class="fantasy-font text-3xl text-emerald-500 mb-1">${asset.name}</h2>
-                        <p class="text-[10px] font-mono text-slate-600 uppercase tracking-widest">ID_ASSET: ${asset.id || 'REF_'+index}</p>
-                    </div>
-                    
-                    <div class="grid grid-cols-2 gap-4 font-mono">
-                        <div class="terminal-box bg-black/50 p-4 border-slate-800 rounded-xl">
-                            <span class="text-[9px] text-slate-500 block mb-1">CAPITALE INVESTITO</span>
-                            <span class="text-xl text-emerald-500">${asset.current_value.toLocaleString()} GP</span>
-                        </div>
-                        <div class="terminal-box bg-black/50 p-4 border-slate-800 rounded-xl">
-                            <span class="text-[9px] text-slate-500 block mb-1">RENDIMENTO MENSILE</span>
-                            <span class="text-xl text-emerald-500">+${(asset.current_value * (asset.roi_rate/100)).toLocaleString()} GP</span>
-                        </div>
-                    </div>
+            if(code !== RECRUIT_CODE) { playSound('alarm'); return msg.innerText = "Codice Reclutamento Errato."; }
+            if(!user || !pass) return msg.innerText = "Compila tutti i campi.";
 
-                    <div class="terminal-box bg-black/50 p-4 border-slate-800 rounded-xl">
-                        <h5 class="text-[10px] font-bold text-slate-400 mb-3 uppercase tracking-tighter">Resoconto Intel</h5>
-                        <p class="text-xs text-slate-500 leading-relaxed italic">"L'attività procede regolarmente. Le guardie cittadine non hanno rilevato irregolarità. Il flusso di cassa rimane stabile nel settore."</p>
-                    </div>
-                </div>
-            `;
-            openModal('manage');
-            playSound('click');
-        }
+            try {
+                // Check exist
+                const { data: exist } = await client.from('users').select('id').eq('username', user);
+                if(exist && exist.length > 0) throw new Error("Utente già esistente.");
 
-        async function logEvent(action, type) {
-            await client.from('audit_logs').insert([{ username: currentUser.username, action, type }]);
-            fetchLogs();
-        }
+                // Create
+                const { error } = await client.from('users').insert([{ username: user, password: pass, role_level: 2, first_login: true }]);
+                if(error) throw error;
 
-        async function fetchLogs() {
-            const { data } = await client.from('audit_logs').select('*').order('created_at', {ascending: false}).limit(20);
-            const con = document.getElementById('audit-log');
-            if(data) {
-                con.innerHTML = data.map(l => `<div><span class="text-slate-600">[${new Date(l.created_at).toLocaleTimeString()}]</span> <span class="text-emerald-400">${l.action}</span></div>`).join('');
+                msg.innerText = "Registrazione OK. Effettua il Login.";
+                msg.className = "text-center text-xs font-mono mt-4 min-h-[20px] text-emerald-400";
+                toggleAuthMode();
+                document.getElementById('login-user').value = user;
+
+            } catch(e) {
+                msg.innerText = e.message;
             }
         }
 
-        function playSound(id) { document.getElementById('sfx-'+id)?.play().catch(()=>{}); }
-        function openModal(id) { document.getElementById('modal-'+id).classList.remove('hidden'); }
+        function updateUserDisplay() {
+            document.getElementById('user-display').innerText = currentUser.username;
+            const roles = { 1: "OSSERVATORE", 2: "AGENTE", 3: "DIRETTORE", 4: "MASTER" };
+            const badge = document.getElementById('role-badge');
+            badge.innerText = roles[currentUser.role_level] || "UNKNOWN";
+            
+            // Permissions UI
+            if(currentUser.role_level < 2) {
+                document.querySelectorAll('.action-btn').forEach(b => b.classList.add('opacity-50', 'pointer-events-none'));
+            }
+            if(currentUser.role_level >= 4) {
+                document.getElementById('master-panel').classList.remove('hidden');
+            }
+        }
+
+        // === CORE APP ===
+        async function initApp() {
+            document.getElementById('loader').classList.remove('hidden');
+            updateRivalsUI();
+
+            try {
+                await fetchInvestments();
+                await fetchLogs();
+                setInterval(fetchLogs, 10000); // Live logs every 10s
+            } catch(e) { console.error(e); }
+            
+            document.getElementById('loader').classList.add('hidden');
+        }
+
+        async function fetchInvestments() {
+            const { data, error } = await client.from('investments').select('*').order('id', {ascending: true});
+            if(!error) {
+                globalData = data || [];
+                renderGrid(globalData);
+                updateChart(globalData);
+            } else {
+                console.error("Fetch Inv Error:", error);
+            }
+        }
+
+        async function fetchLogs() {
+            const { data, error } = await client.from('audit_logs').select('*').order('created_at', {ascending: false}).limit(25);
+            if(!error && data) {
+                const con = document.getElementById('audit-log');
+                con.innerHTML = '';
+                data.forEach(log => {
+                    const time = new Date(log.created_at).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
+                    let color = 'text-slate-400';
+                    if(log.type === 'success') color = 'text-emerald-400';
+                    if(log.type === 'error') color = 'text-red-400';
+                    if(log.type === 'warn') color = 'text-amber-400';
+                    
+                    const div = document.createElement('div');
+                    div.className = `border-l-2 border-slate-800 pl-2 ${color}`;
+                    div.innerHTML = `<span class="opacity-50">[${time}]</span> <span class="font-bold text-slate-300">${log.username}:</span> ${log.action}`;
+                    con.appendChild(div);
+                });
+            }
+        }
+
+        // === RENDERING ===
+        function renderGrid(data) {
+            const grid = document.getElementById('asset-grid');
+            grid.innerHTML = '';
+            
+            let totalCap = 0;
+            let totalDiv = 0;
+            const mult = getMarketMultiplier();
+
+            if(data.length === 0) grid.innerHTML = '<div class="col-span-3 text-center text-slate-500 py-10 italic">Nessun asset attivo.</div>';
+
+            data.forEach(item => {
+                const val = parseInt(item.current_value) || 0;
+                const roi = parseFloat(item.roi_rate) || 0;
+                totalCap += val;
+                if(item.status === 'Attivo') totalDiv += val * (roi * mult / 100);
+
+                let border = item.status === 'Attivo' ? 'border-emerald-900' : 'border-slate-800';
+                let statusColor = item.status === 'Attivo' ? 'text-emerald-500' : 'text-slate-500';
+
+                const card = document.createElement('div');
+                card.className = `card-panel p-4 rounded flex flex-col ${border} relative group overflow-hidden`;
+                card.innerHTML = `
+                    <div class="flex justify-between items-start mb-2">
+                        <h3 class="font-bold text-slate-200 truncate w-3/4 text-sm" title="${item.name}">${item.name}</h3>
+                        <span class="text-[9px] uppercase border px-1 rounded border-slate-700 ${statusColor}">${item.status}</span>
+                    </div>
+                    <div class="text-[10px] text-slate-500 mb-3 h-8 line-clamp-2 italic">${item.description || ''}</div>
+                    <div class="bg-slate-950/50 p-2 rounded border border-slate-800 grid grid-cols-2 gap-2 mb-3">
+                        <div><span class="text-[9px] text-slate-500 uppercase block">Valore</span><span class="text-emerald-400 font-mono font-bold text-sm">${val.toLocaleString()}</span></div>
+                        <div class="text-right"><span class="text-[9px] text-slate-500 uppercase block">ROI</span><span class="text-cyan-400 font-mono font-bold text-sm">${roi}%</span></div>
+                    </div>
+                    <button onclick="openEditModal(${item.id})" class="mt-auto w-full py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-bold uppercase rounded border border-slate-700 transition-colors">Gestisci</button>
+                `;
+                grid.appendChild(card);
+            });
+
+            document.getElementById('total-capital').innerText = totalCap.toLocaleString() + " GP";
+            document.getElementById('total-dividends').innerText = "+" + Math.floor(totalDiv).toLocaleString() + " GP";
+        }
+
+        // === ACTIONS ===
+        async function logEvent(text, type='info') {
+            await client.from('audit_logs').insert([{ username: currentUser.username, action: text, type: type }]);
+            fetchLogs();
+        }
+
+        function openModal(id) {
+            if(currentUser.role_level < 2) return;
+            playSound('click');
+            document.getElementById('modal-'+id).classList.remove('hidden');
+        }
         function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
-        function logout() { window.location.reload(); }
+
+        function openEditModal(id) {
+            const item = globalData.find(i => i.id == id);
+            if(!item) return;
+            playSound('click');
+            
+            document.getElementById('edit-id').value = item.id;
+            document.getElementById('edit-name').value = item.name;
+            document.getElementById('edit-value').value = item.current_value;
+            document.getElementById('edit-roi').value = item.roi_rate;
+            document.getElementById('edit-status').value = item.status;
+            document.getElementById('edit-desc').value = item.description || "";
+            
+            // Permessi
+            const canEdit = currentUser.role_level >= 3;
+            document.getElementById('edit-actions').classList.toggle('hidden', !canEdit);
+            document.getElementById('view-only-msg').classList.toggle('hidden', canEdit);
+            document.getElementById('upgrade-list').classList.toggle('pointer-events-none', !canEdit && currentUser.role_level < 2);
+            document.getElementById('upgrade-list').classList.toggle('opacity-50', !canEdit && currentUser.role_level < 2);
+
+            document.getElementById('modal-edit').classList.remove('hidden');
+        }
+
+        async function executeCreate() {
+            const newItem = {
+                name: document.getElementById('new-name').value,
+                description: document.getElementById('new-desc').value,
+                current_value: parseInt(document.getElementById('new-val').value) || 0,
+                roi_rate: parseFloat(document.getElementById('new-roi').value) || 0,
+                risk_level: document.getElementById('new-risk').value,
+                status: 'Attivo'
+            };
+
+            const { error } = await client.from('investments').insert([newItem]);
+            if(error) return alert("Errore Creazione: " + error.message);
+            
+            closeModal('modal-create');
+            logEvent(`Nuova Impresa: ${newItem.name}`, 'success');
+            fetchInvestments();
+        }
+
+        async function saveAssetChanges() {
+            const id = document.getElementById('edit-id').value;
+            const updates = {
+                name: document.getElementById('edit-name').value,
+                current_value: parseInt(document.getElementById('edit-value').value),
+                roi_rate: parseFloat(document.getElementById('edit-roi').value),
+                status: document.getElementById('edit-status').value,
+                description: document.getElementById('edit-desc').value
+            };
+            
+            const { error } = await client.from('investments').update(updates).eq('id', id);
+            if(error) return alert(error.message);
+            
+            closeModal('modal-edit');
+            logEvent(`Asset aggiornato: ${updates.name}`, 'info');
+            fetchInvestments();
+        }
+
+        async function deleteAssetConfirm() {
+            const id = document.getElementById('edit-id').value;
+            const name = document.getElementById('edit-name').value;
+            if(!confirm(`ELIMINARE DEFINITIVAMENTE "${name}"?`)) return;
+
+            const { error } = await client.from('investments').delete().eq('id', id);
+            if(error) return alert(error.message);
+
+            closeModal('modal-edit');
+            playSound('alarm');
+            logEvent(`Asset ELIMINATO: ${name}`, 'error');
+            fetchInvestments();
+        }
+
+        async function buyUpgrade(type) {
+            if(currentUser.role_level < 2) return;
+            const id = document.getElementById('edit-id').value;
+            let up = {}; let msg = "";
+            
+            if(type === 'security') { up.risk_level = 'Basso'; msg = "Security Upgrade"; }
+            if(type === 'automation') { 
+                const old = parseFloat(document.getElementById('edit-roi').value);
+                up.roi_rate = old + 2; msg = "Automation Upgrade";
+            }
+            if(type === 'marketing') {
+                const old = parseInt(document.getElementById('edit-value').value);
+                up.current_value = Math.floor(old * 1.1); msg = "Marketing Upgrade";
+            }
+
+            if(confirm("Acquistare Upgrade?")) {
+                const { error } = await client.from('investments').update(up).eq('id', id);
+                if(error) return alert(error.message);
+                playSound('upgrade');
+                closeModal('modal-edit');
+                logEvent(`${msg} installato`, 'success');
+                fetchInvestments();
+            }
+        }
+
+        // === SIMULATION & GAMEPLAY ===
+        async function runSimulation() {
+            if(currentUser.role_level < 2) return;
+            
+            const active = globalData.filter(x => x.status === 'Attivo');
+            if(!active.length) return alert("Nessun asset attivo.");
+            
+            const target = active[Math.floor(Math.random() * active.length)];
+            let roll = Math.floor(Math.random() * 100) + 1;
+            if(marketState === 'crisis') roll -= 15;
+            
+            let mult = 1; let msg = ""; let type="info";
+            if(roll <= 10) { mult=0.9; msg=`CRITICO: Perdite su ${target.name}`; type="error"; playSound('alarm'); }
+            else if(roll >= 90) { mult=1.15; msg=`SUCCESSO: Profitti su ${target.name}`; type="success"; playSound('coin'); }
+            else { msg=`Mercato stabile per ${target.name}`; }
+
+            const newVal = Math.floor(target.current_value * mult);
+            await client.from('investments').update({current_value: newVal}).eq('id', target.id);
+            
+            logEvent(msg, type);
+            fetchInvestments();
+        }
+
+        function collectDividends() {
+            if(currentUser.role_level < 2) return;
+            playSound('coin');
+            const val = document.getElementById('total-dividends').innerText;
+            alert("Incassati: " + val);
+            logEvent(`Dividendi riscossi: ${val}`, 'success');
+        }
+
+        function updateWorldState() {
+            if(currentUser.role_level < 3) {
+                document.getElementById('world-state').value = marketState;
+                return alert("Richiede autorizzazione Direttore.");
+            }
+            marketState = document.getElementById('world-state').value;
+            playSound('alarm');
+            logEvent(`Scenario cambiato: ${marketState.toUpperCase()}`, 'warn');
+            renderGrid(globalData); // Re-calc with new multiplier
+        }
+
+        function getMarketMultiplier() {
+            const map = { 'neutral': 1, 'war': 1.2, 'boom': 1.5, 'crisis': 0.5 };
+            return map[marketState] || 1;
+        }
+
+        // === RIVALS ===
+        function updateRivalsUI() {
+            document.getElementById('rival-b-val').innerText = rivals.B + "%";
+            document.getElementById('rival-b-bar').style.width = rivals.B + "%";
+            document.getElementById('rival-c-val').innerText = rivals.C + "%";
+            document.getElementById('rival-c-bar').style.width = rivals.C + "%";
+            
+            localStorage.setItem('ic_rival_b', rivals.B);
+            localStorage.setItem('ic_rival_c', rivals.C);
+        }
+
+        function sabotage(team) {
+            if(currentUser.role_level < 2) return;
+            if(confirm("Spendere 500gp per sabotaggio?")) {
+                rivals[team] = Math.max(0, rivals[team] - 15);
+                updateRivalsUI();
+                playSound('upgrade');
+                logEvent(`Sabotaggio Team ${team} completato`, 'success');
+            }
+        }
+
+        function masterEditRival(team) {
+            if(currentUser.role_level !== 4) return;
+            let val = prompt(`Imposta % Team ${team}:`, rivals[team]);
+            if(val !== null) {
+                rivals[team] = Math.min(100, Math.max(0, parseInt(val)||0));
+                updateRivalsUI();
+                logEvent(`Master ha forzato Team ${team} a ${rivals[team]}%`, 'warn');
+            }
+        }
+
+        function resetRivals() {
+            rivals.B = 0; rivals.C = 0;
+            updateRivalsUI();
+            logEvent("Rivali resettati dal Master", 'warn');
+        }
+
+        function masterEditCapital() {
+            if(currentUser.role_level !== 4) return;
+            let curr = parseInt(document.getElementById('total-capital').innerText.replace(/\D/g,''));
+            let target = prompt("Override Capitale Totale (GP):", curr);
+            if(target === null) return;
+            
+            target = parseInt(target);
+            // Simple logic: create/update a 'Treasury' asset to balance
+            let currentTotal = globalData.reduce((acc, i) => acc + (i.name === 'Riserva Master' ? 0 : i.current_value), 0);
+            let needed = target - currentTotal;
+            
+            // Check if reserve exists
+            const reserve = globalData.find(i => i.name === 'Riserva Master');
+            
+            (async () => {
+                if(reserve) {
+                    await client.from('investments').update({current_value: needed}).eq('id', reserve.id);
+                } else {
+                    await client.from('investments').insert([{
+                        name: 'Riserva Master', 
+                        description: 'Fondi di bilanciamento manuale',
+                        current_value: needed,
+                        roi_rate: 0,
+                        risk_level: 'Basso',
+                        status: 'Attivo'
+                    }]);
+                }
+                logEvent(`Capitale forzato a ${target} GP`, 'warn');
+                fetchInvestments();
+            })();
+        }
+
+        // === USER MANAGER ===
+        async function openUserManager() {
+            const list = document.getElementById('user-list-container');
+            list.innerHTML = '<div class="spinner"></div>';
+            document.getElementById('modal-users').classList.remove('hidden');
+
+            const { data, error } = await client.from('users').select('*').order('role_level', {ascending: false});
+            if(error) return list.innerHTML = "Errore caricamento.";
+
+            list.innerHTML = '';
+            data.forEach(u => {
+                const div = document.createElement('div');
+                div.className = "flex justify-between items-center p-2 border-b border-slate-700 bg-slate-800/50 rounded";
+                
+                let roleColor = u.role_level === 4 ? 'text-purple-400' : (u.role_level === 3 ? 'text-amber-400' : 'text-slate-300');
+                
+                div.innerHTML = `
+                    <div>
+                        <div class="font-bold ${roleColor}">${u.username}</div>
+                        <div class="text-[10px] text-slate-500">Livello ${u.role_level}</div>
+                    </div>
+                    <div class="flex gap-1">
+                        ${u.role_level < 4 ? `
+                            <button onclick="setRole(${u.id}, ${u.role_level+1})" class="px-2 bg-emerald-900 text-emerald-400 rounded hover:bg-emerald-800">▲</button>
+                            <button onclick="setRole(${u.id}, ${u.role_level-1})" class="px-2 bg-amber-900 text-amber-400 rounded hover:bg-amber-800">▼</button>
+                            <button onclick="deleteUserConfirm(${u.id}, '${u.username}')" class="px-2 bg-red-900 text-red-400 rounded hover:bg-red-800">✕</button>
+                        ` : '<span class="text-[10px] px-2 text-slate-600 font-bold">IMMUNE</span>'}
+                    </div>
+                `;
+                list.appendChild(div);
+            });
+        }
+
+        async function setRole(uid, level) {
+            if(level < 1 || level > 4) return;
+            await client.from('users').update({role_level: level}).eq('id', uid);
+            openUserManager();
+        }
+
+        async function deleteUserConfirm(uid, name) {
+            if(confirm(`ELIMINARE UTENTE ${name}? Irreversibile.`)) {
+                await client.from('users').delete().eq('id', uid);
+                logEvent(`Utente ${name} eliminato dal Master`, 'warn');
+                openUserManager();
+            }
+        }
+
+        // === CHARTS ===
+        function updateChart(data) {
+            const ctx = document.getElementById('riskChart').getContext('2d');
+            const counts = { 'Basso': 0, 'Medio': 0, 'Alto': 0, 'Criminale': 0 };
+            data.forEach(d => { if(d.status === 'Attivo') counts[d.risk_level] = (counts[d.risk_level]||0) + d.current_value; });
+            
+            if(window.riskChartInstance) window.riskChartInstance.destroy();
+            window.riskChartInstance = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: Object.keys(counts),
+                    datasets: [{
+                        data: Object.values(counts),
+                        backgroundColor: ['#10b981', '#d97706', '#ef4444', '#7f1d1d'],
+                        borderWidth: 0
+                    }]
+                },
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
+            });
+        }
+
+        // Utils
+        function playSound(id) { document.getElementById('sfx-'+id)?.play().catch(()=>{}); }
+
+                // =========================
+        // INITIALIZATION
+        // =========================
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('Initializing Ink Corp Manager...');
+            
+            // Connect login button
+            const loginBtn = document.querySelector('button[onclick*="authLogin"], #login-btn, button:has-text("ACCEDI")');
+            if(loginBtn) {
+                loginBtn.onclick = function() {
+                    console.log('Login button clicked!');
+                    authLogin();
+                };
+                console.log('Login button connected:', loginBtn);
+            } else {
+                console.error('Login button not found!');
+            }
+            
+            // Connect register button
+            const regBtn = document.querySelector('button[onclick*="authRegister"], #register-btn');
+            if(regBtn) {
+                regBtn.onclick = function() {
+                    console.log('Register button clicked!');
+                    authRegister();
+                };
+                console.log('Register button connected');
+            }
+            
+            console.log('Initialization complete');
+        });
     </script>
 </body>
 </html>
