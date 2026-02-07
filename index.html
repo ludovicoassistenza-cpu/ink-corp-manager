@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ink Corp. | Management System v14.0</title>
+    <title>Ink Corp. | Management System v15.0</title>
     
     <script src="https://cdn.tailwindcss.com"></script>
     
@@ -64,7 +64,7 @@
             <div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-amber-600 to-transparent"></div>
             <div class="text-center mb-8">
                 <h1 class="fantasy-font text-5xl text-amber-600 mb-2">INK CORP.</h1>
-                <p class="text-slate-500 text-xs tracking-[0.4em] uppercase">System v14.0</p>
+                <p class="text-slate-500 text-xs tracking-[0.4em] uppercase">Private System v15.0</p>
             </div>
             
             <div id="login-form" class="space-y-4">
@@ -182,6 +182,7 @@
     <div id="modal-profile" class="fixed inset-0 z-50 flex items-center justify-center bg-black/90 backdrop-blur-sm hidden">
         <div class="bg-slate-900 w-full max-w-5xl h-[85vh] rounded-xl border border-slate-700 flex overflow-hidden shadow-2xl relative">
             <button onclick="closeModal('modal-profile')" class="absolute top-4 right-4 text-slate-500 hover:text-white z-10"><i class="fa-solid fa-times text-xl"></i></button>
+            
             <div class="w-1/3 bg-slate-950 border-r border-slate-800 p-6 flex flex-col">
                 <div class="flex flex-col items-center mb-6">
                     <div class="w-24 h-24 rounded-full bg-slate-800 border-2 border-amber-600 flex items-center justify-center text-4xl text-slate-400 mb-4 shadow-[0_0_15px_rgba(217,119,6,0.3)]">
@@ -190,19 +191,25 @@
                     <h2 id="prof-username" class="text-2xl text-white font-bold fantasy-font">---</h2>
                     <span id="prof-role" class="text-xs text-amber-600 uppercase tracking-widest mt-1">---</span>
                 </div>
+                
                 <div class="bg-slate-900 p-4 rounded border border-slate-800 mb-4">
-                    <div class="text-[10px] text-slate-500 uppercase font-bold">Saldo Disponibile</div>
+                    <div class="text-[10px] text-slate-500 uppercase font-bold flex justify-between">
+                        <span>Saldo Disponibile</span>
+                        <button onclick="openFundsManager()" class="text-emerald-500 hover:underline cursor-pointer"><i class="fa-solid fa-coins"></i> Gestisci Fondi</button>
+                    </div>
                     <div id="prof-balance" class="text-3xl text-emerald-400 font-mono font-bold mt-1">0 GP</div>
                 </div>
+
                 <div class="flex-grow overflow-hidden flex flex-col">
                     <label class="text-[10px] text-slate-500 uppercase font-bold mb-1">Dati Biometrici</label>
                     <textarea id="prof-bio" class="flex-grow bg-slate-900 border border-slate-800 rounded p-3 text-xs text-slate-300 resize-none outline-none focus:border-amber-900 mb-2"></textarea>
                     <button onclick="saveProfile()" class="bg-slate-800 hover:bg-slate-700 text-slate-300 py-2 rounded text-xs uppercase font-bold border border-slate-700">Salva Dati</button>
                 </div>
             </div>
+            
             <div class="w-2/3 bg-slate-900 p-6 flex flex-col">
                 <div class="flex justify-between items-center border-b border-slate-800 pb-4 mb-4">
-                    <h3 class="text-xl text-white fantasy-font"><i class="fa-solid fa-briefcase mr-2"></i> Possedimenti</h3>
+                    <h3 class="text-xl text-white fantasy-font"><i class="fa-solid fa-briefcase mr-2"></i> Possedimenti Personali</h3>
                     <button onclick="openModal('create-personal')" class="bg-emerald-900/30 hover:bg-emerald-900/50 text-emerald-500 border border-emerald-800/50 px-3 py-1.5 rounded text-xs uppercase font-bold">
                         <i class="fa-solid fa-plus mr-1"></i> Nuovo Asset Personale
                     </button>
@@ -334,7 +341,7 @@
         let rivals = { B: parseInt(localStorage.getItem('rival_b')||15), C: parseInt(localStorage.getItem('rival_c')||5) };
         let marketState = 'neutral';
 
-        // === AUTH & REGISTER ===
+        // AUTH
         window.toggleAuthMode = function() {
             document.getElementById('login-form').classList.toggle('hidden');
             document.getElementById('register-form').classList.toggle('hidden');
@@ -386,7 +393,7 @@
 
         window.logout = function() { location.reload(); }
 
-        // === INIT ===
+        // INIT
         async function initApp() {
             updateUserDisplay();
             await Promise.all([fetchUsers(), fetchAssets(), fetchLogs()]);
@@ -417,31 +424,34 @@
             globalData.forEach(item => {
                 const isCorp = !item.owner_id;
                 const flow = Math.floor(item.current_value * (item.roi_rate * mult / 100));
-                if(isCorp) { totalCap += item.current_value; if(item.status==='Attivo') totalFlow += flow; }
+                
+                // MAIN GRID: Show only Corporate Assets
+                if(isCorp) { 
+                    totalCap += item.current_value; 
+                    if(item.status==='Attivo') totalFlow += flow; 
 
-                const ownerName = isCorp ? 'INK CORP' : (allUsers.find(u=>u.id===item.owner_id)?.username || '???');
-                const border = item.roi_rate < 0 ? 'border-red-900/50' : (isCorp ? 'border-slate-800' : 'border-amber-900/50');
-                const textCol = item.roi_rate < 0 ? 'text-red-400' : 'text-emerald-400';
+                    const border = item.roi_rate < 0 ? 'border-red-900/50' : 'border-slate-800';
+                    const textCol = item.roi_rate < 0 ? 'text-red-400' : 'text-emerald-400';
 
-                const card = document.createElement('div');
-                card.className = `glass-panel p-4 rounded border ${border} relative hover:bg-slate-900 transition-colors`;
-                // FIX ID as String
-                card.innerHTML = `
-                    <div class="flex justify-between mb-2">
-                        <div class="text-[9px] text-slate-500 uppercase font-bold">${ownerName}</div>
-                        <div class="text-[9px] ${item.status==='Attivo'?'text-emerald-500':'text-slate-500'} border border-slate-800 px-1 rounded">${item.status}</div>
-                    </div>
-                    <div class="font-bold text-slate-200 truncate mb-2">${item.name}</div>
-                    <div class="grid grid-cols-2 gap-2 text-xs bg-black/20 p-2 rounded mb-2">
-                        <div><span class="text-slate-500 block text-[9px]">VALORE</span>${item.current_value.toLocaleString()}</div>
-                        <div class="text-right"><span class="text-slate-500 block text-[9px]">ROI</span><span class="${textCol}">${item.roi_rate}%</span></div>
-                    </div>
-                    <div class="flex justify-between items-center mt-2">
-                        <div class="text-[10px] text-slate-400">Flow: ${flow>0?'+':''}${flow}</div>
-                        <button onclick="openEditModal('${item.id}')" class="text-[10px] bg-slate-800 hover:bg-slate-700 text-white px-3 py-1.5 rounded border border-slate-700 z-10 relative cursor-pointer font-bold uppercase">GESTISCI</button>
-                    </div>
-                `;
-                grid.appendChild(card);
+                    const card = document.createElement('div');
+                    card.className = `glass-panel p-4 rounded border ${border} relative hover:bg-slate-900 transition-colors`;
+                    card.innerHTML = `
+                        <div class="flex justify-between mb-2">
+                            <div class="text-[9px] text-slate-500 uppercase font-bold">INK CORP</div>
+                            <div class="text-[9px] ${item.status==='Attivo'?'text-emerald-500':'text-slate-500'} border border-slate-800 px-1 rounded">${item.status}</div>
+                        </div>
+                        <div class="font-bold text-slate-200 truncate mb-2">${item.name}</div>
+                        <div class="grid grid-cols-2 gap-2 text-xs bg-black/20 p-2 rounded mb-2">
+                            <div><span class="text-slate-500 block text-[9px]">VALORE</span>${item.current_value.toLocaleString()}</div>
+                            <div class="text-right"><span class="text-slate-500 block text-[9px]">ROI</span><span class="${textCol}">${item.roi_rate}%</span></div>
+                        </div>
+                        <div class="flex justify-between items-center mt-2">
+                            <div class="text-[10px] text-slate-400">Flow: ${flow>0?'+':''}${flow}</div>
+                            <button onclick="openEditModal('${item.id}')" class="text-[10px] bg-slate-800 hover:bg-slate-700 text-white px-3 py-1.5 rounded border border-slate-700 z-10 relative cursor-pointer font-bold uppercase">GESTISCI</button>
+                        </div>
+                    `;
+                    grid.appendChild(card);
+                }
             });
             document.getElementById('total-capital').innerText = totalCap.toLocaleString() + " GP";
             document.getElementById('total-dividends').innerText = (totalFlow>0?'+':'') + totalFlow.toLocaleString() + " GP";
@@ -493,6 +503,26 @@
             logEvent(`Settimana conclusa. Corp: ${corpFlow}GP, Utenti aggiornati.`, 'economy');
             alert(`OPERAZIONE COMPLETATA\n---------------------\nCorporazione: ${corpFlow > 0 ? '+' : ''}${corpFlow} GP\nGli utenti hanno ricevuto i dividendi.`);
             initApp();
+        }
+
+        // === FUNDS MANAGER ===
+        window.openFundsManager = async function() {
+            const amount = prompt("Gestione Fondi (Introito/Spesa)\nInserisci importo (usa '-' per prelevare):");
+            if(amount === null) return;
+            const val = parseInt(amount);
+            if(isNaN(val)) return alert("Inserisci un numero valido.");
+
+            const newBal = (currentUser.balance || 0) + val;
+            
+            const { error } = await client.from('users').update({ balance: newBal }).eq('id', currentUser.id);
+            if(error) return alert("Errore: " + error.message);
+
+            // Refresh Local
+            currentUser.balance = newBal;
+            document.getElementById('prof-balance').innerText = newBal.toLocaleString() + " GP";
+            updateUserDisplay();
+            logEvent(`Fondi Modificati: ${val > 0 ? '+' : ''}${val} GP`, 'economy');
+            playSound('coin');
         }
 
         // === ASSET MODAL ===
