@@ -317,14 +317,14 @@
                             <span class="text-emerald-500 font-mono text-sm">${item.roi_rate}%</span>
                         </div>
                     </div>
-                    <button onclick="openManageModal(${index})" class="w-full bg-slate-800 hover:bg-emerald-900/40 text-slate-400 hover:text-emerald-400 py-2 rounded text-[10px] font-bold uppercase transition-all border border-slate-700">Gestisci Operazioni</button>
+                    <button onclick="openEditModal(${item.id})" class="w-full bg-slate-800 hover:bg-emerald-900/40 text-slate-400 hover:text-emerald-400 py-2 rounded text-[10px] font-bold uppercase transition-all border border-slate-700">Gestisci Operazioni</button>
                 `;
                 grid.appendChild(card);
             });
             document.getElementById('total-capital').innerText = total.toLocaleString() + " GP";
         }
 
-        function openManageModal(index) {
+        function openEditModal(index) {
             const asset = allAssets[index];
             const content = document.getElementById('manage-content');
             content.innerHTML = `
