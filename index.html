@@ -5,16 +5,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Ink Corp. | Registro Ufficiale</title>
     
-    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     
-    <!-- Supabase JS (V2) -->
     <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
     
-    <!-- Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
-    <!-- Font -->
     <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700;900&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 
     <style>
@@ -79,13 +75,11 @@
 </head>
 <body class="h-screen flex flex-col overflow-hidden text-sm">
 
-    <!-- AUDIO SYSTEM -->
     <audio id="sfx-click" src="https://assets.mixkit.co/active_storage/sfx/2568/2568-preview.mp3"></audio>
     <audio id="sfx-coin" src="https://assets.mixkit.co/active_storage/sfx/2003/2003-preview.mp3"></audio>
     <audio id="sfx-alarm" src="https://assets.mixkit.co/active_storage/sfx/995/995-preview.mp3"></audio>
     <audio id="sfx-success" src="https://assets.mixkit.co/active_storage/sfx/1435/1435-preview.mp3"></audio>
 
-    <!-- LOGIN OVERLAY -->
     <div id="login-screen" class="fixed inset-0 z-[100] flex items-center justify-center bg-[#020617] bg-[url('https://www.transparenttextures.com/patterns/dark-leather.png')]">
         <div class="glass-panel w-full max-w-md p-8 rounded-xl shadow-2xl relative border-amber-500/20">
             <div class="text-center mb-8">
@@ -96,7 +90,6 @@
                 <p class="text-slate-500 text-xs uppercase tracking-[0.3em] mt-2">Terminal Access v8.1</p>
             </div>
 
-            <!-- Login Fields -->
             <div id="login-form" class="space-y-4">
                 <input type="text" id="login-user" class="w-full bg-slate-950/80 border border-slate-700 text-white px-4 py-3 rounded focus:border-amber-500 outline-none transition-colors" placeholder="Nome Utente">
                 <input type="password" id="login-pass" class="w-full bg-slate-950/80 border border-slate-700 text-white px-4 py-3 rounded focus:border-amber-500 outline-none transition-colors" placeholder="Password">
@@ -106,7 +99,6 @@
                 </div>
             </div>
 
-            <!-- Register Fields -->
             <div id="register-form" class="space-y-4 hidden">
                 <div class="bg-emerald-900/20 text-emerald-400 p-2 text-center text-xs rounded border border-emerald-900/50">Codice Reclutamento Richiesto</div>
                 <input type="password" id="reg-code" class="w-full bg-slate-950/80 border border-emerald-800 text-emerald-400 px-4 py-3 rounded text-center uppercase tracking-widest outline-none focus:border-emerald-500" placeholder="CODICE (INK2025)">
@@ -123,10 +115,8 @@
         </div>
     </div>
 
-    <!-- MAIN APP INTERFACE -->
     <div id="app-interface" class="flex flex-col h-full hidden opacity-0 transition-opacity duration-500">
         
-        <!-- HEADER -->
         <header class="bg-slate-900/80 border-b border-slate-800 p-4 shadow-lg z-20">
             <div class="container mx-auto max-w-7xl flex flex-col md:flex-row justify-between items-center gap-4">
                 <div class="flex items-center gap-4 cursor-pointer group" onclick="initApp()" title="Ricarica Dati">
@@ -165,13 +155,10 @@
             </div>
         </header>
 
-        <!-- MAIN CONTENT -->
         <div class="flex-grow container mx-auto max-w-7xl p-4 grid grid-cols-12 gap-6 overflow-hidden">
             
-            <!-- LEFT PANEL: Rivals & Actions (3 cols) -->
             <div class="col-span-12 md:col-span-3 flex flex-col gap-4 overflow-y-auto pb-4 pr-1">
                 
-                <!-- MASTER PANEL (Hidden) -->
                 <div id="master-panel" class="hidden glass-panel p-4 rounded border-purple-900/50 bg-slate-900/50 relative overflow-hidden">
                     <div class="absolute inset-0 border border-purple-500/20 rounded pointer-events-none"></div>
                     <h3 class="text-xs font-bold text-purple-400 uppercase mb-3 flex items-center gap-2">
@@ -183,13 +170,11 @@
                     </div>
                 </div>
 
-                <!-- RIVALS -->
                 <div class="glass-panel p-4 rounded bg-gradient-to-b from-slate-900 to-red-950/20 border-red-900/30">
                     <h3 class="text-xs font-bold text-red-500 uppercase mb-3 tracking-widest flex justify-between">
                         Rivali Attivi <span class="animate-pulse text-red-500">●</span>
                     </h3>
                     
-                    <!-- Team B -->
                     <div class="mb-3 group">
                         <div class="flex justify-between text-[10px] font-bold mb-1">
                             <span class="text-red-400">TEAM B</span>
@@ -201,7 +186,6 @@
                         <button onclick="sabotage('B')" class="action-btn w-full mt-1 py-1 bg-red-950/50 hover:bg-red-900/50 border border-red-900/40 text-red-400 text-[9px] rounded">Sabota (500gp)</button>
                     </div>
 
-                    <!-- Team C -->
                     <div class="group">
                         <div class="flex justify-between text-[10px] font-bold mb-1">
                             <span class="text-orange-400">TEAM C</span>
@@ -214,7 +198,6 @@
                     </div>
                 </div>
 
-                <!-- ACTIONS -->
                 <div class="grid grid-cols-1 gap-2">
                     <button id="btn-create" onclick="openModal('create')" class="action-btn py-3 px-4 bg-slate-800 hover:bg-slate-700 border border-slate-600 rounded flex items-center gap-3 text-left">
                         <span class="text-xl text-emerald-500">✚</span>
@@ -226,41 +209,31 @@
                     </button>
                 </div>
 
-                <!-- AUDIT LOG -->
                 <div class="glass-panel flex-grow flex flex-col p-0 rounded overflow-hidden h-60">
                     <div class="bg-slate-950 p-2 border-b border-slate-800 text-[10px] font-bold text-slate-500 uppercase tracking-widest">
                         Registro Eventi
                     </div>
                     <div id="audit-log" class="p-2 overflow-y-auto flex-col-reverse flex gap-1 h-full font-mono text-[10px] text-slate-400">
-                        <!-- Logs here -->
-                    </div>
+                        </div>
                 </div>
             </div>
 
-            <!-- RIGHT PANEL: Dashboard (9 cols) -->
             <div class="col-span-12 md:col-span-9 flex flex-col h-full relative">
-                <!-- Chart Area -->
                 <div class="h-40 bg-slate-900/50 rounded border border-slate-800 p-2 mb-4 flex items-center justify-center shadow-inner">
                     <canvas id="riskChart" style="max-height: 100%; max-width: 100%;"></canvas>
                 </div>
 
-                <!-- Loading State -->
                 <div id="loader" class="absolute inset-0 z-10 flex flex-col items-center justify-center bg-slate-950/80 backdrop-blur-sm rounded">
                     <div class="spinner mb-2"></div>
                     <div class="text-amber-500 text-xs font-mono animate-pulse">CARICAMENTO DATI...</div>
                 </div>
 
-                <!-- Grid -->
                 <div id="asset-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 overflow-y-auto pr-2 pb-20 content-start h-full">
-                    <!-- Assets here -->
-                </div>
+                    </div>
             </div>
         </div>
     </div>
 
-    <!-- === MODALS === -->
-
-    <!-- EDIT ASSET -->
     <div id="modal-edit" class="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm hidden">
         <div class="bg-slate-900 border border-slate-700 w-full max-w-3xl rounded-xl shadow-2xl flex flex-col md:flex-row overflow-hidden">
             <div class="p-6 md:w-1/2 border-r border-slate-700 flex flex-col gap-4">
@@ -322,7 +295,6 @@
         </div>
     </div>
 
-    <!-- CREATE MODAL -->
     <div id="modal-create" class="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm hidden">
         <div class="bg-slate-900 border border-emerald-800 w-full max-w-md rounded-xl shadow-2xl p-6">
             <h3 class="fantasy-font text-xl text-emerald-500 mb-4">Nuova Impresa</h3>
@@ -347,13 +319,11 @@
         </div>
     </div>
 
-    <!-- USER MANAGER (MASTER) -->
     <div id="modal-users" class="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm hidden">
         <div class="bg-slate-900 border border-purple-800 w-full max-w-lg rounded-xl shadow-2xl p-6">
             <h3 class="fantasy-font text-xl text-purple-500 mb-4 border-b border-purple-900 pb-2">Gestione Personale (Master)</h3>
             <div id="user-list-container" class="space-y-2 max-h-80 overflow-y-auto mb-4 min-h-[100px]">
-                <!-- User list injected here -->
-            </div>
+                </div>
             <div class="flex justify-end">
                 <button onclick="closeModal('modal-users')" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-white rounded text-xs font-bold uppercase">Chiudi</button>
             </div>
@@ -388,65 +358,51 @@
 
         // === AUTH ===
         async function authLogin() {
-        const user = document.getElementById('login-user').value.trim();
-        const pass = document.getElementById('login-pass').value.trim();
-        const msg = document.getElementById('auth-msg');
+            const user = document.getElementById('login-user').value.trim();
+            const pass = document.getElementById('login-pass').value.trim();
+            const msg = document.getElementById('auth-msg');
 
-        console.log('Login attempt for:', user);
+            console.log('Login attempt for:', user);
 
-        if(!user || !pass) {
-            msg.innerText = "Inserisci credenziali.";
-            return;
-        }
-
-        msg.innerText = "Verifica in corso...";
-
-        try {
-            console.log('Querying Supabase for user:', user);
-            
-            const { data, error } = await client
-                .from('users')
-                .select('*')
-                .eq('username', user)
-                .eq('password', pass)
-                .maybeSingle();
-
-            console.log('Query result:', { data, error });
-
-            if(error) {
-                console.error('Login Error:', error);
-                msg.innerText = "ERRORE: " + error.message;
+            if(!user || !pass) {
+                msg.innerText = "Inserisci credenziali.";
                 return;
             }
 
-            if(!data) {
-                console.log('No user found with these credentials');
-                msg.innerText = "ACCESSO NEGATO: Credenziali invalide";
-                return;
-            }
+            msg.innerText = "Verifica in corso...";
 
-            console.log('Login successful for:', data);
-            msg.innerText = "Accesso concesso!";
+            try {
+                const { data, error } = await client
+                    .from('users')
+                    .select('*')
+                    .eq('username', user)
+                    .eq('password', pass)
+                    .maybeSingle();
 
-            currentUser = data;
-            document.getElementById('login-screen').classList.add('hidden');
-            document.getElementById('app-interface').classList.remove('hidden');
-            document.getElementById('app-interface').classList.remove('opacity-0');
+                if(error) throw error;
 
-            playSound('success');
-            updateUserDisplay();
+                if(!data) {
+                    msg.innerText = "ACCESSO NEGATO: Credenziali invalide";
+                    playSound('alarm');
+                    return;
+                }
 
-        } catch(e) {
-            console.error('Unexpected error:', e);
-            msg.innerText = "ERRORE CRITICO: " + e.message;
-        }
-    }
+                console.log('Login successful for:', data);
+                msg.innerText = "Accesso concesso!";
+
+                currentUser = data;
+                document.getElementById('login-screen').classList.add('hidden');
+                document.getElementById('app-interface').classList.remove('hidden');
+                setTimeout(() => document.getElementById('app-interface').classList.remove('opacity-0'), 100);
+
+                playSound('success');
+                updateUserDisplay();
                 initApp();
-                logEvent(`Login effettuato.`, 'info');
+                logEvent(`Login effettuato: ${user}`, 'info');
 
             } catch(e) {
                 console.error(e);
-                msg.innerText = e.message;
+                msg.innerText = "Errore: " + e.message;
                 playSound('alarm');
             }
         }
@@ -883,35 +839,8 @@
         // Utils
         function playSound(id) { document.getElementById('sfx-'+id)?.play().catch(()=>{}); }
 
-                // =========================
-        // INITIALIZATION
-        // =========================
         document.addEventListener('DOMContentLoaded', function() {
-            console.log('Initializing Ink Corp Manager...');
-            
-            // Connect login button
-            const loginBtn = document.querySelector('button[onclick*="authLogin"], #login-btn, button:has-text("ACCEDI")');
-            if(loginBtn) {
-                loginBtn.onclick = function() {
-                    console.log('Login button clicked!');
-                    authLogin();
-                };
-                console.log('Login button connected:', loginBtn);
-            } else {
-                console.error('Login button not found!');
-            }
-            
-            // Connect register button
-            const regBtn = document.querySelector('button[onclick*="authRegister"], #register-btn');
-            if(regBtn) {
-                regBtn.onclick = function() {
-                    console.log('Register button clicked!');
-                    authRegister();
-                };
-                console.log('Register button connected');
-            }
-            
-            console.log('Initialization complete');
+            console.log('Ink Corp Manager Started');
         });
     </script>
 </body>
