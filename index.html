@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ink Corp. | Management System v11.0</title>
+    <title>Ink Corp. | Management System v12.0 (Economy)</title>
     
     <script src="https://cdn.tailwindcss.com"></script>
     
@@ -44,7 +44,6 @@
         .btn-action { transition: all 0.2s; }
         .btn-action:active { transform: scale(0.95); }
         
-        /* Event Card Animation */
         @keyframes slideIn {
             from { transform: translateY(-50px); opacity: 0; }
             to { transform: translateY(0); opacity: 1; }
@@ -64,7 +63,7 @@
             <div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-amber-600 to-transparent"></div>
             <div class="text-center mb-10">
                 <h1 class="fantasy-font text-5xl text-amber-600 mb-2">INK CORP.</h1>
-                <p class="text-slate-500 text-xs tracking-[0.4em] uppercase">Secure Terminal v11.0</p>
+                <p class="text-slate-500 text-xs tracking-[0.4em] uppercase">Economy System v12.0</p>
             </div>
             <div class="space-y-4">
                 <input type="text" id="login-user" class="w-full bg-slate-900/50 border border-slate-800 p-3 text-white rounded focus:border-amber-600 outline-none text-center tracking-widest" placeholder="IDENTIFICATIVO">
@@ -82,7 +81,7 @@
                 <div class="text-amber-500 text-2xl"><i class="fa-solid fa-dragon"></i></div>
                 <div>
                     <h1 class="fantasy-font text-xl text-slate-200 font-bold tracking-wider">INK CORP.</h1>
-                    <div class="text-[9px] text-emerald-500 font-mono">SYSTEM ONLINE</div>
+                    <div class="text-[9px] text-emerald-500 font-mono">FINANCE DIVISION</div>
                 </div>
             </div>
 
@@ -92,9 +91,9 @@
                     <div id="total-capital" class="text-emerald-400 font-mono text-lg font-bold">---</div>
                 </div>
                 <div class="h-8 w-px bg-slate-800"></div>
-                <div class="text-center cursor-pointer hover:text-white transition-colors" onclick="collectDividends()">
-                    <div class="text-[9px] text-slate-500 uppercase">Flusso Atteso</div>
-                    <div id="total-dividends" class="text-cyan-400 font-mono text-lg font-bold">---</div>
+                <div class="text-center cursor-pointer group" onclick="collectDividends()">
+                    <div class="text-[9px] text-slate-500 uppercase group-hover:text-amber-500">Riscatta Flusso</div>
+                    <div id="total-dividends" class="text-cyan-400 font-mono text-lg font-bold group-hover:text-amber-400 transition-colors">---</div>
                 </div>
             </div>
 
@@ -149,10 +148,10 @@
                     <div class="flex items-center gap-2">
                         <span class="text-xs font-bold text-slate-400 uppercase px-2">Scenario:</span>
                         <select id="world-state" onchange="updateWorldState()" class="bg-slate-800 text-amber-500 text-xs font-bold rounded px-2 py-1 outline-none border border-slate-700">
-                            <option value="neutral">⚖️ Stabile</option>
-                            <option value="war">⚔️ Guerra</option>
-                            <option value="boom">💰 Boom</option>
-                            <option value="crisis">📉 Crisi</option>
+                            <option value="neutral">⚖️ Stabile (1.0x)</option>
+                            <option value="war">⚔️ Guerra (1.2x)</option>
+                            <option value="boom">💰 Boom (1.5x)</option>
+                            <option value="crisis">📉 Crisi (0.5x)</option>
                         </select>
                     </div>
                     <button onclick="fetchAssets()" class="text-xs text-slate-500 hover:text-white"><i class="fa-solid fa-sync mr-1"></i> Aggiorna</button>
@@ -166,7 +165,6 @@
     <div id="modal-profile" class="fixed inset-0 z-50 flex items-center justify-center bg-black/90 backdrop-blur-sm hidden">
         <div class="bg-slate-900 w-full max-w-5xl h-[85vh] rounded-xl border border-slate-700 flex overflow-hidden shadow-2xl relative">
             <button onclick="closeModal('modal-profile')" class="absolute top-4 right-4 text-slate-500 hover:text-white"><i class="fa-solid fa-times text-xl"></i></button>
-            
             <div class="w-1/3 bg-slate-950 border-r border-slate-800 p-6 flex flex-col">
                 <div class="flex flex-col items-center mb-6">
                     <div class="w-24 h-24 rounded-full bg-slate-800 border-2 border-amber-600 flex items-center justify-center text-4xl text-slate-400 mb-4 shadow-[0_0_15px_rgba(217,119,6,0.3)]">
@@ -203,7 +201,6 @@
                 <h2 class="text-2xl text-red-600 fantasy-font font-bold tracking-widest"><i class="fa-solid fa-globe mr-3"></i>WAR ROOM</h2>
                 <button onclick="closeModal('modal-war-room')" class="text-red-600 hover:text-white text-sm uppercase font-bold border border-red-900 px-4 py-1 rounded">CHIUDI</button>
             </div>
-
             <div class="flex-grow flex p-6 gap-6 overflow-hidden">
                 <div class="w-1/3 flex flex-col gap-6 overflow-y-auto pr-2">
                     <div class="bg-slate-900/40 border border-red-900/30 p-4 rounded">
@@ -237,19 +234,17 @@
                         </div>
                     </div>
                 </div>
-
                 <div class="w-1/3 bg-black border border-slate-800 rounded relative flex flex-col p-4 font-mono text-xs">
                     <div class="text-emerald-500 mb-2 border-b border-emerald-900/30 pb-1">CONSOLE SPIONAGGIO</div>
                     <div id="war-console" class="flex-grow overflow-y-auto space-y-1 text-slate-400">
                         <div class="text-slate-600">Sistema pronto.</div>
                     </div>
                 </div>
-
                 <div class="w-1/3 bg-slate-900/30 border border-slate-800 p-4 rounded flex flex-col">
                     <h3 class="text-slate-400 font-bold mb-4 border-b border-slate-800 pb-2">MASTER CONTROL</h3>
                     <div class="space-y-3">
                         <div class="bg-slate-800 p-2 rounded">
-                            <label class="text-[9px] text-slate-500 block uppercase">Forza Valori Rivali (%)</label>
+                            <label class="text-[9px] text-slate-500 block uppercase">Forza Valori (%)</label>
                             <div class="flex gap-2 mt-1">
                                 <button onclick="masterSetRival('B')" class="flex-1 bg-red-900/30 hover:bg-red-900/50 text-red-400 text-xs py-1 rounded border border-red-900">Set B</button>
                                 <button onclick="masterSetRival('C')" class="flex-1 bg-orange-900/30 hover:bg-orange-900/50 text-orange-400 text-xs py-1 rounded border border-orange-900">Set C</button>
@@ -285,12 +280,10 @@
                         <option value="Alto">🔴 Alto</option>
                         <option value="Criminale">☠️ Criminale</option>
                     </select>
-                    <select id="edit-owner" class="bg-slate-800 border border-slate-600 p-2 text-white rounded outline-none">
-                        </select>
+                    <select id="edit-owner" class="bg-slate-800 border border-slate-600 p-2 text-white rounded outline-none"></select>
                 </div>
                 <textarea id="edit-desc" class="w-full h-24 bg-slate-800 border border-slate-600 p-2 text-white rounded outline-none resize-none" placeholder="Descrizione..."></textarea>
             </div>
-
             <div class="flex justify-between mt-6 pt-4 border-t border-slate-800">
                 <button onclick="deleteAsset()" id="btn-delete" class="text-red-500 text-xs font-bold uppercase hidden">Elimina</button>
                 <div class="flex gap-2 ml-auto">
@@ -305,7 +298,7 @@
         <div class="bg-slate-900 border border-amber-500/50 w-full max-w-md p-8 rounded-xl text-center event-card shadow-[0_0_50px_rgba(217,119,6,0.2)]">
             <div id="event-icon" class="text-6xl mb-4 text-amber-500"><i class="fa-solid fa-bolt"></i></div>
             <h2 id="event-title" class="text-2xl text-white font-bold mb-2 fantasy-font">EVENTO</h2>
-            <p id="event-desc" class="text-slate-300 mb-6">Descrizione evento...</p>
+            <p id="event-desc" class="text-slate-300 mb-6">Descrizione...</p>
             <div id="event-effect" class="bg-black/30 p-2 rounded text-emerald-400 font-mono text-sm mb-6">Effetto</div>
             <button onclick="closeModal('modal-event')" class="bg-slate-800 hover:bg-white hover:text-black text-white px-6 py-2 rounded uppercase font-bold transition-colors">ACCETTA</button>
         </div>
@@ -323,7 +316,7 @@
         let rivals = { B: parseInt(localStorage.getItem('rival_b')||15), C: parseInt(localStorage.getItem('rival_c')||5) };
         let marketState = 'neutral';
 
-        // === AUTH ===
+        // AUTH
         async function authLogin() {
             const user = document.getElementById('login-user').value.trim();
             const pass = document.getElementById('login-pass').value.trim();
@@ -335,22 +328,17 @@
             try {
                 let { data, error } = await client.from('users').select('*').eq('username', user).eq('password', pass).maybeSingle();
                 if(error || !data) throw new Error("Credenziali Errate");
-
                 currentUser = data;
                 document.getElementById('login-screen').classList.add('hidden');
                 document.getElementById('app-interface').classList.remove('hidden');
                 setTimeout(()=>document.getElementById('app-interface').classList.remove('opacity-0'), 100);
-                
                 initApp();
                 playSound('success');
-            } catch(e) {
-                msg.innerText = e.message;
-                playSound('alarm');
-            }
+            } catch(e) { msg.innerText = e.message; playSound('alarm'); }
         }
         function logout() { location.reload(); }
 
-        // === INIT ===
+        // INIT
         async function initApp() {
             updateUserDisplay();
             await Promise.all([fetchUsers(), fetchAssets(), fetchLogs()]);
@@ -369,10 +357,7 @@
 
         async function fetchAssets() {
             let { data } = await client.from('investments').select('*').order('id', {ascending: true});
-            if(data) {
-                globalData = data;
-                renderGrid();
-            }
+            if(data) { globalData = data; renderGrid(); }
         }
 
         function renderGrid() {
@@ -390,7 +375,6 @@
                 const border = item.roi_rate < 0 ? 'border-red-900/50' : (isCorp ? 'border-slate-800' : 'border-amber-900/50');
                 const textCol = item.roi_rate < 0 ? 'text-red-400' : 'text-emerald-400';
 
-                // Fixed OnClick
                 const card = document.createElement('div');
                 card.className = `bg-slate-900/60 p-4 rounded border ${border} relative hover:bg-slate-900 transition-colors`;
                 card.innerHTML = `
@@ -410,266 +394,26 @@
                 `;
                 grid.appendChild(card);
             });
-
             document.getElementById('total-capital').innerText = totalCap.toLocaleString() + " GP";
             document.getElementById('total-dividends').innerText = (totalFlow>0?'+':'') + totalFlow.toLocaleString() + " GP";
         }
 
-        // === ASSET ACTIONS (FIXED) ===
-        window.openModal = function(type) {
-            document.getElementById('edit-id').value = '';
-            document.getElementById('edit-name').value = '';
-            document.getElementById('edit-value').value = '';
-            document.getElementById('edit-roi').value = '0';
-            document.getElementById('edit-desc').value = '';
-            document.getElementById('edit-owner').value = '';
-            document.getElementById('btn-delete').classList.add('hidden');
-            document.getElementById('modal-title').innerText = "Nuovo Asset";
+        // === DIVIDEND SYSTEM (NEW) ===
+        window.collectDividends = async function() {
+            if(currentUser.role_level < 2) return alert("Permessi insufficienti");
+            if(!confirm("⚠️ Confermi chiusura settimana?\nI profitti/perdite verranno distribuiti ai conti e alla Tesoreria.")) return;
 
-            if(type === 'create-personal') {
-                document.getElementById('edit-owner').value = currentUser.id;
-                document.getElementById('edit-owner').disabled = true;
-                document.getElementById('modal-title').innerText = "Nuovo Asset Personale";
-            } else {
-                document.getElementById('edit-owner').disabled = false;
-            }
-            document.getElementById('modal-edit').classList.remove('hidden');
-        }
+            const mult = getMultiplier();
+            let corpFlow = 0;
+            let userFlows = {}; // { uid: amount }
+            let updates = [];
 
-        window.openEditModal = function(id) {
-            const item = globalData.find(i => i.id == id);
-            if(!item) return console.error("Asset not found:", id);
+            // 1. Calculate Flows
+            globalData.forEach(asset => {
+                if(asset.status !== 'Attivo') return;
+                const flow = Math.floor(asset.current_value * (asset.roi_rate * mult / 100));
 
-            document.getElementById('edit-id').value = item.id;
-            document.getElementById('edit-name').value = item.name;
-            document.getElementById('edit-value').value = item.current_value;
-            document.getElementById('edit-roi').value = item.roi_rate;
-            document.getElementById('edit-risk').value = item.risk_level || 'Medio';
-            document.getElementById('edit-desc').value = item.description || '';
-            document.getElementById('edit-owner').value = item.owner_id || '';
-            document.getElementById('edit-owner').disabled = false;
-            
-            document.getElementById('modal-title').innerText = "Modifica: " + item.name;
-            document.getElementById('btn-delete').classList.remove('hidden');
-            document.getElementById('modal-edit').classList.remove('hidden');
-        }
-
-        window.saveAsset = async function() {
-            const id = document.getElementById('edit-id').value;
-            const payload = {
-                name: document.getElementById('edit-name').value,
-                current_value: parseInt(document.getElementById('edit-value').value) || 0,
-                roi_rate: parseFloat(document.getElementById('edit-roi').value) || 0,
-                risk_level: document.getElementById('edit-risk').value,
-                description: document.getElementById('edit-desc').value,
-                owner_id: document.getElementById('edit-owner').value || null,
-                status: 'Attivo'
-            };
-
-            if(id) await client.from('investments').update(payload).eq('id', id);
-            else await client.from('investments').insert([payload]);
-
-            closeModal('modal-edit');
-            fetchAssets();
-            logEvent(id ? `Asset Modificato: ${payload.name}` : `Creato Asset: ${payload.name}`, 'economy');
-        }
-
-        window.deleteAsset = async function() {
-            const id = document.getElementById('edit-id').value;
-            if(!confirm("Eliminare definitivamente?")) return;
-            await client.from('investments').delete().eq('id', id);
-            closeModal('modal-edit');
-            fetchAssets();
-            logEvent("Asset eliminato", 'alert');
-        }
-
-        // === WAR ROOM (ENHANCED) ===
-        window.openWarRoom = function() {
-            document.getElementById('modal-war-room').classList.remove('hidden');
-            updateRivalsUI();
-        }
-
-        function updateRivalsUI() {
-            document.getElementById('war-b-val').innerText = rivals.B + "%";
-            document.getElementById('war-b-bar').style.width = rivals.B + "%";
-            document.getElementById('war-c-val').innerText = rivals.C + "%";
-            document.getElementById('war-c-bar').style.width = rivals.C + "%";
-            
-            document.getElementById('mini-bar-b').style.width = rivals.B + "%";
-            document.getElementById('mini-bar-c').style.width = rivals.C + "%";
-            
-            localStorage.setItem('rival_b', rivals.B);
-            localStorage.setItem('rival_c', rivals.C);
-        }
-
-        window.sabotage = function(team, type) {
-            const actions = {
-                'spy': { cost: 200, dmg: 5, label: 'Spionaggio' },
-                'sabotage': { cost: 500, dmg: 15, label: 'Sabotaggio' },
-                'cyber': { cost: 300, dmg: 10, label: 'Cyber Attacco' },
-                'hitman': { cost: 2000, dmg: 40, label: 'Eliminazione Bersaglio' }
-            };
-            const act = actions[type];
-            if(!confirm(`${act.label} su Team ${team}? Costo: ${act.cost} GP`)) return;
-
-            const roll = Math.floor(Math.random() * 100);
-            const success = roll > 30; // 70% chance
-
-            let msg = "";
-            const consoleDiv = document.getElementById('war-console');
-            
-            if(success) {
-                rivals[team] = Math.max(0, rivals[team] - act.dmg);
-                updateRivalsUI();
-                msg = `[SUCCESSO] ${act.label} vs Team ${team}. Danni: -${act.dmg}%`;
-                playSound('click');
-            } else {
-                msg = `[FALLIMENTO] ${act.label} vs Team ${team} sventato.`;
-                playSound('alarm');
-            }
-            
-            const line = document.createElement('div');
-            line.className = success ? 'text-emerald-500' : 'text-red-500';
-            line.innerText = `> ${msg}`;
-            consoleDiv.appendChild(line);
-            consoleDiv.scrollTop = consoleDiv.scrollHeight;
-            logEvent(msg, 'war');
-        }
-
-        // === MASTER CONTROL ===
-        window.masterSetRival = function(team) {
-            if(currentUser.role_level < 4) return alert("Solo MASTER");
-            const val = prompt(`Nuovo valore % per Team ${team}:`, rivals[team]);
-            if(val !== null) {
-                rivals[team] = parseInt(val);
-                updateRivalsUI();
-                logEvent(`Master override Team ${team} a ${val}%`, 'alert');
-            }
-        }
-
-        window.resetRivals = function() {
-            if(currentUser.role_level < 4) return alert("Solo MASTER");
-            if(confirm("Reset Totale War Room?")) {
-                rivals = { B: 0, C: 0 };
-                updateRivalsUI();
-                logEvent("Reset War Room eseguito", 'alert');
-            }
-        }
-
-        window.masterEvent = async function(type) {
-            if(currentUser.role_level < 4) return alert("Solo MASTER");
-            if(!confirm("Forzare evento globale? Impossibile annullare.")) return;
-            
-            let mult = type === 'crash' ? 0.9 : 1.1; // -10% or +10%
-            let label = type === 'crash' ? "CROLLO MERCATO" : "BOOM ECONOMICO";
-            
-            // Apply to ALL assets
-            const { error } = await client.rpc('multiply_assets', { factor: mult }); 
-            // Note: RPC would be ideal, but here we do client-side loop as fallback since we can't create RPC
-            for(let asset of globalData) {
-                await client.from('investments').update({ current_value: Math.floor(asset.current_value * mult) }).eq('id', asset.id);
-            }
-            
-            fetchAssets();
-            logEvent(`MASTER EVENT: ${label} applicato globalmente.`, 'alert');
-            playSound('boom');
-            alert("Mercato Aggiornato.");
-        }
-
-        // === REAL EVENTS SYSTEM ===
-        window.triggerEvent = async function() {
-            const events = [
-                { title: "Ispezione Fiscale", desc: "Multa corporativa del 5% sui valori.", type: 'bad', effect: (v) => Math.floor(v * 0.95) },
-                { title: "Contratto Governativo", desc: "I valori degli asset salgono del 5%.", type: 'good', effect: (v) => Math.floor(v * 1.05) },
-                { title: "Sciopero Dipendenti", desc: "Perdita di produttività (-2% Valore).", type: 'bad', effect: (v) => Math.floor(v * 0.98) },
-                { title: "Innovazione Tecnologica", desc: "Efficienza aumentata (+8% Valore).", type: 'good', effect: (v) => Math.floor(v * 1.08) }
-            ];
-
-            const ev = events[Math.floor(Math.random() * events.length)];
-            
-            // Show Modal
-            document.getElementById('event-title').innerText = ev.title;
-            document.getElementById('event-desc').innerText = ev.desc;
-            document.getElementById('event-effect').innerText = ev.type === 'good' ? "Bonus Applicato" : "Malus Applicato";
-            document.getElementById('event-icon').className = `text-6xl mb-4 ${ev.type==='good'?'text-emerald-500':'text-red-500'}`;
-            document.getElementById('event-icon').innerHTML = ev.type==='good' ? '<i class="fa-solid fa-arrow-trend-up"></i>' : '<i class="fa-solid fa-arrow-trend-down"></i>';
-            document.getElementById('modal-event').classList.remove('hidden');
-
-            playSound(ev.type === 'good' ? 'sfx-coin' : 'sfx-alarm');
-
-            // Apply Effect Real-time
-            for(let asset of globalData) {
-                await client.from('investments').update({ current_value: ev.effect(asset.current_value) }).eq('id', asset.id);
-            }
-            fetchAssets();
-            logEvent(`EVENTO: ${ev.title}`, ev.type==='good'?'economy':'alert');
-        }
-
-        // === PROFILE ===
-        window.openProfile = async function(uid) {
-            const { data: u } = await client.from('users').select('*').eq('id', uid).single();
-            if(!u) return;
-
-            document.getElementById('prof-username').innerText = u.username;
-            document.getElementById('prof-role').innerText = ['Nullo','Osservatore','Agente','Direttore','Master'][u.role_level] || 'Agente';
-            document.getElementById('prof-balance').innerText = (u.balance||0).toLocaleString() + " GP";
-            document.getElementById('prof-bio').value = u.bio || "";
-
-            const list = document.getElementById('prof-assets');
-            list.innerHTML = '';
-            const myAssets = globalData.filter(a => a.owner_id === u.id);
-            if(myAssets.length === 0) list.innerHTML = '<div class="col-span-2 text-slate-500 italic text-center text-xs py-4">Nessun asset.</div>';
-
-            myAssets.forEach(a => {
-                const d = document.createElement('div');
-                d.className = "bg-slate-800 p-3 rounded border border-slate-700 flex justify-between items-center";
-                d.innerHTML = `
-                    <div><div class="font-bold text-slate-200 text-xs">${a.name}</div><div class="text-[10px] text-slate-500">${a.current_value} GP</div></div>
-                    <button onclick="closeModal('modal-profile'); openEditModal(${a.id})" class="text-xs bg-slate-700 hover:bg-slate-600 px-2 py-1 rounded text-white">Edit</button>
-                `;
-                list.appendChild(d);
-            });
-            document.getElementById('modal-profile').classList.remove('hidden');
-        }
-
-        window.saveProfile = async function() {
-            const bio = document.getElementById('prof-bio').value;
-            await client.from('users').update({bio: bio}).eq('id', currentUser.id);
-            alert("Dati salvati.");
-        }
-
-        // UTILS
-        window.closeModal = function(id) { document.getElementById(id).classList.add('hidden'); }
-        function playSound(id) { document.getElementById(id)?.play().catch(()=>{}); }
-        function updateUserDisplay() {
-            document.getElementById('user-display').innerText = currentUser.username;
-            document.getElementById('user-balance-mini').innerText = (currentUser.balance||0).toLocaleString() + " GP";
-        }
-        function getMultiplier() { return {'neutral':1, 'war':1.2, 'boom':1.5, 'crisis':0.5}[marketState]||1; }
-        window.updateWorldState = function() { marketState = document.getElementById('world-state').value; renderGrid(); }
-        window.collectDividends = function() {
-            alert("Funzione simulata: I valori vengono aggiornati nel database.");
-        }
-
-        async function fetchLogs() {
-            let { data } = await client.from('audit_logs').select('*').order('created_at', {ascending: false}).limit(30);
-            if(data) {
-                const con = document.getElementById('audit-log');
-                con.innerHTML = '';
-                data.forEach(l => {
-                    const time = new Date(l.created_at).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
-                    let col = l.type === 'war' ? 'text-red-400' : (l.type === 'alert' ? 'text-orange-500' : 'text-slate-400');
-                    const d = document.createElement('div');
-                    d.className = `border-l-2 border-slate-800 pl-2 py-1 ${col} text-[10px] hover:bg-white/5`;
-                    d.innerHTML = `<div class="opacity-50 text-[9px] mb-0.5">${time} | ${l.username}</div><div>${l.action}</div>`;
-                    con.appendChild(d);
-                });
-            }
-        }
-        async function logEvent(text, type='info') {
-            await client.from('audit_logs').insert([{ username: currentUser.username, action: text, type: type }]);
-            fetchLogs();
-        }
-    </script>
-</body>
-</html>
+                if(!asset.owner_id) {
+                    corpFlow += flow;
+                } else {
+                    if
