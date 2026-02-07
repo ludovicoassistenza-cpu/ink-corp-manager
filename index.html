@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ink Corp. | Management System v22.0</title>
+    <title>Ink Corp. | Management System v23.0</title>
     
     <script src="https://cdn.tailwindcss.com"></script>
     
@@ -16,7 +16,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700;900&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 
     <style>
-        :root { --bg-dark: #020617; --accent: #d97706; }
+        :root { --bg-dark: #020617; --accent: #d97706; --terminal-green: #10b981; }
         body { font-family: 'Inter', sans-serif; background-color: var(--bg-dark); background-image: radial-gradient(circle at 50% 50%, #0f172a 0%, #020617 100%); color: #e2e8f0; }
         h1, h2, h3, .fantasy-font { font-family: 'Cinzel', serif; letter-spacing: 0.05em; }
         ::-webkit-scrollbar { width: 6px; } ::-webkit-scrollbar-track { background: #020617; } ::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
@@ -26,18 +26,25 @@
         @keyframes slideIn { from { transform: translateX(100%); } to { transform: translateX(0); } }
         #toast-container { position: fixed; top: 20px; right: 20px; z-index: 9999; }
         .army-card:hover { border-color: #d97706; background-color: rgba(217, 119, 6, 0.1); }
+        
+        /* Chat Overlay */
+        #chat-widget { position: fixed; bottom: 20px; right: 20px; width: 300px; height: 400px; background: #0f172a; border: 1px solid #334155; border-radius: 8px; display: flex; flex-direction: column; z-index: 80; box-shadow: 0 10px 25px rgba(0,0,0,0.5); }
+        #chat-messages { flex-grow: 1; overflow-y: auto; padding: 10px; font-size: 0.8rem; background: rgba(0,0,0,0.3); }
+        .chat-msg { margin-bottom: 6px; } .chat-user { font-weight: bold; color: #d97706; } .chat-text { color: #e2e8f0; }
     </style>
 </head>
 <body class="h-screen flex flex-col overflow-hidden text-sm">
 
     <div id="toast-container"></div>
+    <div id="db-status" class="fixed top-0 left-0 w-full bg-red-600 text-white text-xs text-center py-1 hidden z-[9999]">ERRORE CONNESSIONE DATABASE: <span id="db-error-msg"></span></div>
+
     <audio id="sfx-click" src="https://assets.mixkit.co/active_storage/sfx/2568/2568-preview.mp3"></audio>
     <audio id="sfx-coin" src="https://assets.mixkit.co/active_storage/sfx/2003/2003-preview.mp3"></audio>
     <audio id="sfx-alarm" src="https://assets.mixkit.co/active_storage/sfx/995/995-preview.mp3"></audio>
 
     <div id="login-screen" class="fixed inset-0 z-[100] flex items-center justify-center bg-black/95">
         <div class="w-full max-w-md p-8 border border-amber-900/50 rounded-lg bg-[#050101] relative">
-            <div class="text-center mb-8"><h1 class="fantasy-font text-5xl text-amber-600 mb-2">INK CORP.</h1><p class="text-slate-500 text-xs tracking-[0.4em]">System v22.0</p></div>
+            <div class="text-center mb-8"><h1 class="fantasy-font text-5xl text-amber-600 mb-2">INK CORP.</h1><p class="text-slate-500 text-xs tracking-[0.4em]">System v23.0</p></div>
             <div id="login-form" class="space-y-4">
                 <input type="text" id="login-user" class="w-full bg-slate-900/50 border border-slate-800 p-3 text-white rounded text-center tracking-widest outline-none" placeholder="NOME UTENTE">
                 <input type="password" id="login-pass" class="w-full bg-slate-900/50 border border-slate-800 p-3 text-white rounded text-center tracking-widest outline-none" placeholder="PASSWORD">
@@ -67,6 +74,7 @@
                 <div class="text-center cursor-pointer group" onclick="collectDividends()"><div class="text-[9px] text-slate-500 uppercase group-hover:text-amber-500">Riscatta</div><div id="total-dividends" class="text-cyan-400 font-mono text-lg font-bold group-hover:text-amber-400">---</div></div>
             </div>
             <div class="flex items-center gap-4">
+                <button onclick="toggleChat()" class="text-slate-400 hover:text-white relative"><i class="fa-solid fa-comment-dots text-xl"></i></button>
                 <button onclick="openProfile(currentUser.id)" class="flex items-center gap-3 px-4 py-2 bg-slate-800 hover:bg-slate-700 rounded border border-slate-700"><div class="text-right"><div id="user-display" class="text-xs font-bold text-white">User</div><div id="user-balance-mini" class="text-[10px] text-amber-500 font-mono">0 GP</div></div><div class="w-8 h-8 bg-slate-600 rounded-full flex items-center justify-center"><i class="fa-solid fa-user"></i></div></button>
                 <button onclick="logout()" class="w-8 h-8 flex items-center justify-center text-slate-500 hover:text-red-500"><i class="fa-solid fa-power-off"></i></button>
             </div>
@@ -86,7 +94,7 @@
                     <div class="flex-grow bg-slate-900/50 p-4 rounded border border-slate-800 relative"><canvas id="wealthChart"></canvas></div>
                     <div class="w-48 flex flex-col gap-2">
                         <div class="bg-slate-900 p-2 rounded border border-slate-800"><span class="text-xs font-bold text-slate-400 uppercase block mb-1">Scenario</span><select id="world-state" onchange="updateWorldState()" class="w-full bg-slate-800 text-amber-500 text-xs font-bold outline-none cursor-pointer"><option value="neutral">⚖️ Stabile</option><option value="war">⚔️ Guerra</option><option value="boom">💰 Boom</option><option value="crisis">📉 Crisi</option></select></div>
-                        <div class="bg-slate-900 p-2 rounded border border-slate-800"><span class="text-xs font-bold text-slate-400 uppercase block mb-1">Filtro Vista</span><select id="view-filter" onchange="renderGrid()" class="w-full bg-slate-800 text-cyan-500 text-xs font-bold outline-none cursor-pointer"><option value="corp">🏢 Solo Corp.</option><option value="all">🌐 Tutto (Globale)</option></select></div>
+                        <div class="bg-slate-900 p-2 rounded border border-slate-800"><span class="text-xs font-bold text-slate-400 uppercase block mb-1">Vista</span><select id="view-filter" onchange="renderGrid()" class="w-full bg-slate-800 text-cyan-500 text-xs font-bold outline-none cursor-pointer"><option value="all" selected>🌐 Tutto</option><option value="corp">🏢 Solo Corp.</option></select></div>
                         <button onclick="fetchAssets()" class="flex-grow bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded flex flex-col items-center justify-center gap-2 group"><i class="fa-solid fa-rotate text-2xl text-slate-500 group-hover:text-white transition-colors"></i><span class="text-xs font-bold text-slate-400">AGGIORNA</span></button>
                     </div>
                 </div>
@@ -95,16 +103,24 @@
         </div>
     </div>
 
+    <div id="chat-widget" class="hidden">
+        <div class="h-8 bg-slate-800 flex justify-between items-center px-3 border-b border-slate-700"><span class="text-xs font-bold text-slate-300">COMMS</span><button onclick="toggleChat()" class="text-slate-500 hover:text-white"><i class="fa-solid fa-minus"></i></button></div>
+        <div id="chat-messages"></div>
+        <div class="p-2 bg-slate-800 flex gap-2"><input id="chat-input" type="text" class="flex-grow bg-slate-900 border border-slate-700 rounded text-xs p-1 text-white outline-none" placeholder="Messaggio..."><button onclick="sendChat()" class="text-amber-500"><i class="fa-solid fa-paper-plane"></i></button></div>
+    </div>
+
     <div id="modal-war-hub" class="fixed inset-0 z-50 flex items-center justify-center bg-black/95 backdrop-blur-md hidden"><div class="w-full max-w-4xl relative flex flex-col items-center"><button onclick="closeModal('modal-war-hub')" class="absolute -top-12 right-0 text-slate-500 hover:text-white text-2xl"><i class="fa-solid fa-times"></i></button><h2 class="text-3xl text-white fantasy-font font-bold mb-8 tracking-widest">DIPARTIMENTI</h2><div class="flex gap-6 w-full"><div onclick="switchWarView('espionage')" class="flex-1 bg-slate-900/50 border border-purple-900 p-8 rounded-xl cursor-pointer hover:bg-purple-900/20 transition-all text-center group"><div class="text-5xl text-purple-500 mb-4 group-hover:scale-110"><i class="fa-solid fa-user-secret"></i></div><h3 class="text-xl text-purple-400 font-bold mb-2">INTEL</h3></div><div onclick="switchWarView('army')" class="flex-1 bg-slate-900/50 border border-red-900 p-8 rounded-xl cursor-pointer hover:bg-red-900/20 transition-all text-center group"><div class="text-5xl text-red-500 mb-4 group-hover:scale-110"><i class="fa-solid fa-jet-fighter"></i></div><h3 class="text-xl text-red-400 font-bold mb-2">ESERCITO</h3></div></div></div></div>
     
     <div id="view-army" class="fixed inset-0 z-[60] flex items-center justify-center bg-black/95 hidden"><div class="w-full h-full max-w-7xl max-h-[95vh] bg-[#0c0505] border border-red-900/60 rounded-lg flex flex-col relative"><div class="h-20 border-b border-red-900/50 flex justify-between items-center px-8 bg-gradient-to-r from-red-950/40 to-transparent"><div class="flex items-center gap-4"><div class="text-4xl text-red-600"><i class="fa-solid fa-person-rifle"></i></div><div><h2 class="text-2xl text-red-500 fantasy-font font-bold tracking-widest">COMANDO ESERCITO</h2></div></div><div class="flex items-center gap-6"><div class="text-right"><div class="text-[9px] text-slate-500 uppercase">Potenza</div><div id="army-total-power" class="text-xl text-white font-mono font-bold">0</div></div><div class="text-right"><div class="text-[9px] text-slate-500 uppercase">Fondi Corp</div><div id="army-treasury-fund" class="text-xl text-amber-500 font-mono font-bold">0 GP</div></div><button onclick="openUnitConfig()" class="text-amber-500 hover:text-white text-xs uppercase font-bold border border-amber-900 px-4 py-2 rounded bg-amber-900/20">Configura</button><button onclick="backToHub()" class="text-red-500 hover:text-white text-xs uppercase font-bold border border-red-900 px-6 py-2 rounded bg-red-950/20">Hub</button></div></div><div class="flex-grow flex p-6 gap-6 overflow-hidden"><div class="w-1/3 flex flex-col bg-slate-900/20 border border-slate-800 rounded p-4"><h3 class="text-slate-400 font-bold mb-4 uppercase text-xs flex items-center gap-2"><i class="fa-solid fa-warehouse"></i> Caserma</h3><div id="recruitment-list" class="flex-grow overflow-y-auto space-y-3 pr-2"></div></div><div class="w-2/3 flex flex-col gap-4"><div class="flex-grow bg-[#050505] border border-red-900/30 rounded p-6 relative overflow-hidden flex justify-between items-center px-12"><div class="flex flex-col items-center z-10 group"><div class="text-slate-500 mb-2 uppercase text-xs font-bold tracking-widest">Base</div><div class="w-32 h-32 border-2 border-slate-600 rounded-full flex items-center justify-center bg-slate-900/80 relative"><i class="fa-solid fa-shield-halved text-4xl text-slate-500"></i><div class="absolute -bottom-4 bg-slate-800 px-3 py-1 rounded text-xs text-white border border-slate-600 font-mono" id="count-base">0</div></div></div><div class="h-1 bg-slate-800 flex-grow mx-4 relative"></div><div class="flex flex-col items-center z-10 group"><div class="text-red-500 mb-2 uppercase text-xs font-bold tracking-widest">Fronte</div><div class="w-32 h-32 border-2 border-red-900 rounded-full flex items-center justify-center bg-red-950/20 relative"><i class="fa-solid fa-skull text-4xl text-red-700 animate-pulse"></i><div class="absolute -bottom-4 bg-red-900 px-3 py-1 rounded text-xs text-white border border-red-700 font-mono" id="count-front">0</div></div></div></div><div class="h-1/3 bg-slate-900/30 border border-slate-800 rounded p-4 flex flex-col"><h3 class="text-slate-400 font-bold mb-2 uppercase text-xs">Logistica</h3><div class="flex-grow flex items-center gap-4"><select id="move-type" class="bg-slate-800 text-white p-2 rounded text-xs border border-slate-700 outline-none w-1/4"></select><div class="flex flex-col items-center w-1/2"><input type="range" id="move-amount" min="1" max="100" value="1" class="w-full accent-red-500 cursor-pointer" oninput="document.getElementById('move-val').innerText=this.value"><span id="move-val" class="text-red-500 font-mono font-bold mt-1">1</span></div><button onclick="moveTroops()" class="bg-red-900 hover:bg-red-800 text-white px-6 py-3 rounded text-xs font-bold uppercase w-1/4 transition-colors border border-red-700">SCHIERA</button></div></div></div></div></div></div>
 
-    <div id="modal-unit-config" class="fixed inset-0 z-[70] flex items-center justify-center bg-black/95 hidden"><div class="bg-slate-900 border border-slate-700 w-full max-w-lg rounded p-6"><h3 class="text-xl text-white font-bold mb-4">Configurazione Unità (Master)</h3><div id="unit-config-list" class="space-y-2 mb-4 max-h-60 overflow-y-auto"></div><div class="grid grid-cols-4 gap-2 mb-2"><input id="new-unit-id" placeholder="ID (es. mech)" class="bg-slate-800 text-white text-xs p-2 rounded"><input id="new-unit-name" placeholder="Nome" class="bg-slate-800 text-white text-xs p-2 rounded"><input id="new-unit-cost" type="number" placeholder="Costo" class="bg-slate-800 text-white text-xs p-2 rounded"><input id="new-unit-pow" type="number" placeholder="Pow" class="bg-slate-800 text-white text-xs p-2 rounded"></div><div class="flex justify-between"><button onclick="closeModal('modal-unit-config')" class="text-slate-500">Chiudi</button><button onclick="addNewUnitType()" class="bg-emerald-700 text-white px-4 py-1 rounded text-xs">Aggiungi</button></div></div></div>
+    <div id="modal-unit-config" class="fixed inset-0 z-[70] flex items-center justify-center bg-black/95 hidden"><div class="bg-slate-900 border border-slate-700 w-full max-w-lg rounded p-6"><h3 class="text-xl text-white font-bold mb-4">Configurazione Unità (Master)</h3><div id="unit-config-list" class="space-y-2 mb-4 max-h-60 overflow-y-auto"></div><div class="grid grid-cols-4 gap-2 mb-2"><input id="new-unit-id" placeholder="ID" class="bg-slate-800 text-white text-xs p-2 rounded"><input id="new-unit-name" placeholder="Nome" class="bg-slate-800 text-white text-xs p-2 rounded"><input id="new-unit-cost" type="number" placeholder="Costo" class="bg-slate-800 text-white text-xs p-2 rounded"><input id="new-unit-pow" type="number" placeholder="Pow" class="bg-slate-800 text-white text-xs p-2 rounded"></div><div class="flex justify-between"><button onclick="closeModal('modal-unit-config')" class="text-slate-500">Chiudi</button><button onclick="addNewUnitType()" class="bg-emerald-700 text-white px-4 py-1 rounded text-xs">Aggiungi</button></div></div></div>
 
     <div id="view-espionage" class="fixed inset-0 z-[60] flex items-center justify-center bg-black/95 hidden"><div class="w-full h-full max-w-6xl max-h-[90vh] bg-[#0a0505] border border-purple-900/40 rounded-lg flex flex-col relative"><div class="h-16 border-b border-purple-900/30 flex justify-between items-center px-6"><h2 class="text-xl text-purple-500 font-bold">INTEL</h2><button onclick="backToHub()" class="text-xs border border-purple-900 text-purple-500 px-3 py-1 rounded">INDIETRO</button></div><div class="flex-grow flex p-6 gap-6 overflow-hidden"><div class="w-1/3 flex flex-col gap-4 overflow-y-auto"><div id="rivals-container" class="space-y-4"></div></div><div class="w-1/3 bg-black border border-slate-800 rounded p-4 font-mono text-xs"><div id="war-console" class="flex-grow overflow-y-auto space-y-1 text-slate-400 h-full"></div></div><div class="w-1/3 bg-slate-900/30 border border-slate-800 p-4 rounded"><h3 class="text-slate-400 font-bold mb-4">MASTER</h3><button onclick="masterSetRival()" class="w-full bg-slate-800 hover:bg-slate-700 text-slate-300 py-2 text-xs rounded mb-2">Set Manuale</button></div></div></div></div>
 
     <div id="modal-edit" class="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm hidden"><div class="bg-slate-900 border border-slate-700 w-full max-w-lg rounded shadow-xl p-6 relative"><h3 id="modal-title" class="fantasy-font text-xl text-white mb-4">Gestione</h3><input type="hidden" id="edit-id"><div class="space-y-3"><input type="text" id="edit-name" class="w-full bg-slate-800 border border-slate-600 p-2 text-white rounded outline-none" placeholder="Nome"><div class="grid grid-cols-2 gap-3"><input type="number" id="edit-value" class="bg-slate-800 border border-slate-600 p-2 text-white rounded outline-none" placeholder="Valore"><input type="number" step="0.1" id="edit-roi" class="bg-slate-800 border border-slate-600 p-2 text-white rounded outline-none" placeholder="ROI %"></div><div class="grid grid-cols-2 gap-3"><select id="edit-risk" class="bg-slate-800 border border-slate-600 p-2 text-white rounded outline-none"><option value="Basso">🟢 Basso</option><option value="Medio">🟡 Medio</option><option value="Alto">🔴 Alto</option><option value="Criminale">☠️ Criminale</option></select><select id="edit-owner" class="bg-slate-800 border border-slate-600 p-2 text-white rounded outline-none"></select></div><textarea id="edit-desc" class="w-full h-24 bg-slate-800 border border-slate-600 p-2 text-white rounded outline-none resize-none" placeholder="Desc..."></textarea></div><div class="flex justify-between mt-6 pt-4 border-t border-slate-800"><button onclick="deleteAsset()" id="btn-delete" class="text-red-500 text-xs font-bold uppercase hidden">Elimina</button><div class="flex gap-2 ml-auto"><button onclick="closeModal('modal-edit')" class="text-slate-400 px-4 py-2 hover:text-white">Annulla</button><button onclick="saveAsset()" class="bg-emerald-700 hover:bg-emerald-600 text-white px-6 py-2 rounded font-bold shadow-lg">Salva</button></div></div></div></div>
+    
     <div id="modal-profile" class="fixed inset-0 z-50 flex items-center justify-center bg-black/90 backdrop-blur-sm hidden"><div class="bg-slate-900 w-full max-w-5xl h-[85vh] rounded-xl border border-slate-700 flex overflow-hidden shadow-2xl relative"><button onclick="closeModal('modal-profile')" class="absolute top-4 right-4 text-slate-500 hover:text-white z-10"><i class="fa-solid fa-times text-xl"></i></button><div class="w-1/3 bg-slate-950 border-r border-slate-800 p-6 flex flex-col"><div class="flex flex-col items-center mb-6"><div class="w-24 h-24 rounded-full bg-slate-800 border-2 border-amber-600 flex items-center justify-center text-4xl text-slate-400 mb-4 shadow-[0_0_15px_rgba(217,119,6,0.3)]"><i class="fa-solid fa-user-astronaut"></i></div><h2 id="prof-username" class="text-2xl text-white font-bold fantasy-font">---</h2><span id="prof-role" class="text-xs text-amber-600 uppercase tracking-widest mt-1">---</span></div><div class="bg-slate-900 p-4 rounded border border-slate-800 mb-4"><div class="text-[10px] text-slate-500 uppercase font-bold flex justify-between"><span>Saldo</span><button onclick="openFundsManager()" class="text-emerald-500 hover:underline"><i class="fa-solid fa-coins"></i> Gestisci</button></div><div id="prof-balance" class="text-3xl text-emerald-400 font-mono font-bold mt-1">0 GP</div></div><div class="flex-grow overflow-hidden flex flex-col"><label class="text-[10px] text-slate-500 uppercase font-bold mb-1">Dati Biometrici</label><textarea id="prof-bio" class="flex-grow bg-slate-900 border border-slate-800 rounded p-3 text-xs text-slate-300 resize-none outline-none focus:border-amber-900 mb-2"></textarea><button onclick="saveProfile()" class="bg-slate-800 hover:bg-slate-700 text-slate-300 py-2 rounded text-xs uppercase font-bold border border-slate-700">Salva</button></div></div><div class="w-2/3 bg-slate-900 p-6 flex flex-col"><div class="flex justify-between items-center border-b border-slate-800 pb-4 mb-4"><h3 class="text-xl text-white fantasy-font">Asset Personali</h3><button onclick="openModal('create-personal')" class="bg-emerald-900/30 hover:bg-emerald-900/50 text-emerald-500 border border-emerald-800/50 px-3 py-1.5 rounded text-xs uppercase font-bold">Nuovo</button></div><div id="prof-assets" class="grid grid-cols-2 gap-3 overflow-y-auto content-start flex-grow"></div></div></div></div>
+    
     <div id="modal-event" class="fixed inset-0 z-[60] flex items-center justify-center bg-black/90 backdrop-blur-md hidden"><div class="bg-slate-900 border border-amber-500/50 w-full max-w-md p-8 rounded-xl text-center event-card shadow-[0_0_50px_rgba(217,119,6,0.2)]"><div id="event-icon" class="text-6xl mb-4 text-amber-500"><i class="fa-solid fa-bolt"></i></div><h2 id="event-title" class="text-2xl text-white font-bold mb-2 fantasy-font">EVENTO</h2><p id="event-desc" class="text-slate-300 mb-6">Descrizione...</p><div id="event-effect" class="bg-black/30 p-2 rounded text-emerald-400 font-mono text-sm mb-6">Effetto</div><button onclick="closeModal('modal-event')" class="bg-slate-800 hover:bg-white hover:text-black text-white px-6 py-2 rounded uppercase font-bold transition-colors">ACCETTA</button></div></div>
 
     <script>
@@ -123,11 +139,11 @@
             msg.innerText = "Connessione in corso...";
             try {
                 let {data, error} = await client.from('users').select('*').eq('username', user).eq('password', pass).maybeSingle();
-                if(error) { msg.innerText = "ERRORE TECNICO: " + error.message; return; }
+                if(error) throw new Error(error.message);
                 if(!data) { msg.innerText = "Utente non trovato o Password Errata."; return; }
                 currentUser=data; document.getElementById('login-screen').classList.add('hidden'); document.getElementById('app-interface').classList.remove('hidden'); setTimeout(()=>document.getElementById('app-interface').classList.remove('opacity-0'),100);
                 initApp();
-            } catch(e) { msg.innerText = "CRASH: " + e.message; }
+            } catch(e) { msg.innerText = "ERRORE: " + e.message; document.getElementById('db-status').innerText = "DB ERROR: " + e.message; document.getElementById('db-status').classList.remove('hidden'); }
         }
         window.authRegister = async () => {
             const user=document.getElementById('reg-user').value.trim(), pass=document.getElementById('reg-pass').value.trim(), code=document.getElementById('reg-code').value.trim(), msg=document.getElementById('auth-msg');
@@ -137,12 +153,13 @@
         }
         window.logout = () => location.reload();
 
-        // INIT
+        // INIT & CORE
         async function initApp() {
             if(typeof Chart !== 'undefined') renderChart(); 
             updateUserDisplay();
-            try { await Promise.all([fetchUsers(), fetchAssets(), fetchLogs(), fetchRivals()]); } catch(e) { console.warn(e); }
+            try { await Promise.all([fetchUsers(), fetchAssets(), fetchLogs(), fetchRivals(), fetchChat()]); } catch(e) { console.warn(e); }
             updateArmyUI();
+            setInterval(fetchChat, 5000); // Polling Chat
         }
         async function fetchUsers() { let {data} = await client.from('users').select('*'); if(data) { allUsers=data; const sel=document.getElementById('edit-owner'); sel.innerHTML='<option value="">🏢 Ink Corp</option>'; data.forEach(u=>sel.innerHTML+=`<option value="${u.id}">👤 ${u.username}</option>`); } }
         async function fetchAssets() {
@@ -153,75 +170,78 @@
                 let a = data.find(a => a.name === 'COMANDO ARMATA'); if(a&&a.description) try{corpArmy=JSON.parse(a.description)}catch(e){}
                 let c = data.find(a => a.name === 'SYSTEM_ARMY_CONFIG'); if(c&&c.description) try{unitConfig=JSON.parse(c.description)}catch(e){}
                 renderGrid(); if(chart) updateChartData();
-            } else if (!data) { showToast("Nessun asset nel DB!", "error"); }
+            }
         }
-        async function fetchRivals() { let {data} = await client.from('rivals').select('*'); if(data&&data.length>0) { rivals.B=data.find(r=>r.id==='B')?.influence||0; rivals.C=data.find(r=>r.id==='C')?.influence||0; updateRivalsUI(); } else { await client.from('rivals').insert([{id:'B', influence:15}, {id:'C', influence:5}]); } }
+        async function fetchRivals() { 
+            let {data} = await client.from('rivals').select('*'); 
+            if(data&&data.length>0) { rivals.B=data.find(r=>r.id==='B')?.influence||0; rivals.C=data.find(r=>r.id==='C')?.influence||0; updateRivalsUI(); }
+            else { await client.from('rivals').insert([{id:'B', influence:15}, {id:'C', influence:5}]); } 
+        }
 
         function renderGrid() {
             const grid = document.getElementById('asset-grid'); grid.innerHTML = '';
             let totalCap=0, totalFlow=0; const mult=getMultiplier();
-            const viewFilter = document.getElementById('view-filter').value; // corp or all
+            const viewFilter = document.getElementById('view-filter').value;
 
             globalData.forEach(item => {
                 if(item.name==='COMANDO ARMATA' || item.name==='SYSTEM_ARMY_CONFIG') return;
                 const isCorp = !item.owner_id;
                 const flow = Math.floor(item.current_value * (item.roi_rate * mult / 100));
                 
-                // Logic: if view is 'corp', show only corp. If 'all', show everything.
                 if(viewFilter === 'all' || (viewFilter === 'corp' && isCorp)) {
                     if(isCorp) { totalCap+=item.current_value; if(item.status==='Attivo') totalFlow+=flow; }
                     const border=item.roi_rate<0?'border-red-900/50':'border-slate-800';
                     const ownerLabel = isCorp ? 'INK CORP' : (allUsers.find(u=>u.id===item.owner_id)?.username || 'Privato');
                     
-                    grid.innerHTML += `<div class="glass-panel p-4 rounded border ${border} relative hover:bg-slate-900 transition-colors"><div class="flex justify-between mb-2"><div class="text-[9px] text-slate-500 uppercase font-bold">${ownerLabel}</div><div class="text-[9px] ${item.status==='Attivo'?'text-emerald-500':'text-slate-500'} border border-slate-800 px-1 rounded">${item.status}</div></div><div class="font-bold text-slate-200 truncate mb-2">${item.name}</div><div class="grid grid-cols-2 gap-2 text-xs bg-black/20 p-2 rounded mb-2"><div><span class="text-slate-500 block text-[9px]">VALORE</span>${item.current_value.toLocaleString()}</div><div class="text-right"><span class="text-slate-500 block text-[9px]">ROI</span><span class="${item.roi_rate<0?'text-red-400':'text-emerald-400'}">${item.roi_rate}%</span></div></div><div class="flex justify-between items-center mt-2"><div class="text-[10px] text-slate-400">Flow: ${flow>0?'+':''}${flow}</div><button onclick="openEditModal('${item.id}')" class="text-[10px] bg-slate-800 hover:bg-slate-700 text-white px-3 py-1.5 rounded border border-slate-700 font-bold">GESTISCI</button></div></div>`;
+                    grid.innerHTML += `<div class="glass-panel p-4 rounded border ${border} relative hover:bg-slate-900 transition-colors"><div class="flex justify-between mb-2"><div class="text-[9px] text-slate-500 uppercase font-bold">${ownerLabel}</div><div class="text-[9px] ${item.status==='Attivo'?'text-emerald-500':'text-slate-500'} border border-slate-800 px-1 rounded">${item.status}</div></div><div class="font-bold text-slate-200 truncate mb-2">${item.name}</div><div class="grid grid-cols-2 gap-2 text-xs bg-black/20 p-2 rounded mb-2"><div><span class="text-slate-500 block text-[9px]">VALORE</span>${item.current_value.toLocaleString()}</div><div class="text-right"><span class="text-slate-500 block text-[9px]">ROI</span><span class="${item.roi_rate<0?'text-red-400':'text-emerald-400'}">${item.roi_rate}%</span></div></div><div class="flex justify-between items-center mt-2"><div class="text-[10px] text-slate-400">Flow: ${flow>0?'+':''}${flow}</div><button onclick="openEditModal('${item.id}')" class="text-[10px] bg-slate-800 hover:bg-slate-700 text-white px-3 py-1.5 rounded border border-slate-700 font-bold uppercase">GESTISCI</button></div></div>`;
                 }
             });
             document.getElementById('total-capital').innerText = totalCap.toLocaleString() + " GP";
             document.getElementById('total-dividends').innerText = (totalFlow>0?'+':'') + totalFlow.toLocaleString() + " GP";
         }
 
-        // ASSETS
-        window.openModal=(t)=>{ document.getElementById('edit-id').value=''; document.getElementById('edit-name').value=''; document.getElementById('edit-value').value=''; document.getElementById('edit-roi').value='0'; document.getElementById('edit-desc').value=''; document.getElementById('edit-owner').value=''; document.getElementById('modal-title').innerText="Nuovo"; if(t==='create-personal'){document.getElementById('edit-owner').value=currentUser.id;document.getElementById('edit-owner').disabled=true;}else{document.getElementById('edit-owner').disabled=false;} document.getElementById('modal-edit').classList.remove('hidden'); }
-        window.openEditModal=(id)=>{ const i=globalData.find(x=>x.id==id); if(!i)return; document.getElementById('edit-id').value=i.id; document.getElementById('edit-name').value=i.name; document.getElementById('edit-value').value=i.current_value; document.getElementById('edit-roi').value=i.roi_rate; document.getElementById('edit-risk').value=i.risk_level||'Medio'; document.getElementById('edit-desc').value=i.description||''; document.getElementById('edit-owner').value=i.owner_id||''; document.getElementById('edit-owner').disabled=false; document.getElementById('modal-edit').classList.remove('hidden'); }
-        window.saveAsset=async()=>{ const id=document.getElementById('edit-id').value, p={name:document.getElementById('edit-name').value, current_value:parseInt(document.getElementById('edit-value').value)||0, roi_rate:parseFloat(document.getElementById('edit-roi').value)||0, risk_level:document.getElementById('edit-risk').value, description:document.getElementById('edit-desc').value, owner_id:document.getElementById('edit-owner').value||null, status:'Attivo'}; if(id) await client.from('investments').update(p).eq('id',id); else await client.from('investments').insert([p]); closeModal('modal-edit'); fetchAssets(); showToast("Salvato", "success"); }
-        window.deleteAsset=async()=>{ const id=document.getElementById('edit-id').value; if(confirm("Eliminare?")) { await client.from('investments').delete().eq('id',id); closeModal('modal-edit'); fetchAssets(); showToast("Eliminato", "success"); } }
+        // ASSET ACTIONS
+        window.openModal = (t) => { document.getElementById('edit-id').value=''; document.getElementById('edit-name').value=''; document.getElementById('edit-value').value=''; document.getElementById('edit-roi').value='0'; document.getElementById('edit-desc').value=''; document.getElementById('edit-owner').value=''; document.getElementById('modal-title').innerText="Nuovo"; if(t==='create-personal'){document.getElementById('edit-owner').value=currentUser.id;document.getElementById('edit-owner').disabled=true;}else{document.getElementById('edit-owner').disabled=false;} document.getElementById('modal-edit').classList.remove('hidden'); }
+        window.openEditModal = (id) => { const i=globalData.find(x=>x.id==id); if(!i)return; document.getElementById('edit-id').value=i.id; document.getElementById('edit-name').value=i.name; document.getElementById('edit-value').value=i.current_value; document.getElementById('edit-roi').value=i.roi_rate; document.getElementById('edit-risk').value=i.risk_level||'Medio'; document.getElementById('edit-desc').value=i.description||''; document.getElementById('edit-owner').value=i.owner_id||''; document.getElementById('edit-owner').disabled=false; document.getElementById('modal-edit').classList.remove('hidden'); }
+        window.saveAsset = async () => { const id=document.getElementById('edit-id').value, p={name:document.getElementById('edit-name').value, current_value:parseInt(document.getElementById('edit-value').value)||0, roi_rate:parseFloat(document.getElementById('edit-roi').value)||0, risk_level:document.getElementById('edit-risk').value, description:document.getElementById('edit-desc').value, owner_id:document.getElementById('edit-owner').value||null, status:'Attivo'}; if(id) await client.from('investments').update(p).eq('id',id); else await client.from('investments').insert([p]); closeModal('modal-edit'); fetchAssets(); showToast("Salvato", "success"); }
+        window.deleteAsset = async () => { const id=document.getElementById('edit-id').value; if(confirm("Eliminare?")) { await client.from('investments').delete().eq('id',id); closeModal('modal-edit'); fetchAssets(); showToast("Eliminato", "success"); } }
 
         // ECONOMY
-        window.collectDividends=async()=>{
+        window.collectDividends = async () => {
             if(currentUser.role_level < 2) return showToast("No permessi", "error");
             if(!confirm("Chiudere settimana?")) return;
-            const mult={'neutral':1,'war':1.2,'boom':1.5,'crisis':0.5}[marketState];
-            let corpFlow=0, userFlows={};
-            globalData.forEach(a=>{ if(a.status!=='Attivo')return; const f=Math.floor(a.current_value*(a.roi_rate*mult/100)); if(!a.owner_id)corpFlow+=f; else userFlows[a.owner_id]=(userFlows[a.owner_id]||0)+f; });
-            let treasury=globalData.find(a=>a.name==='TESORERIA');
-            if(treasury) await client.from('investments').update({current_value:treasury.current_value+corpFlow}).eq('id',treasury.id);
+            const mult = {'neutral':1,'war':1.2,'boom':1.5,'crisis':0.5}[marketState];
+            let corpFlow = 0; let userFlows = {};
+            globalData.forEach(a => {
+                if(a.status !== 'Attivo') return;
+                const flow = Math.floor(a.current_value * (a.roi_rate * mult / 100));
+                if(!a.owner_id) corpFlow += flow; else { userFlows[a.owner_id] = (userFlows[a.owner_id]||0) + flow; }
+            });
+            let treasury = globalData.find(a => a.name === 'TESORERIA');
+            if(treasury) await client.from('investments').update({current_value: treasury.current_value + corpFlow}).eq('id', treasury.id);
             else await client.from('investments').insert([{name:'TESORERIA', current_value:corpFlow, roi_rate:0, status:'Attivo'}]);
-            for(const [uid,f] of Object.entries(userFlows)) { const u=allUsers.find(x=>x.id===uid); if(u) await client.from('users').update({balance:u.balance+f}).eq('id',uid); }
+            for(const [uid, flow] of Object.entries(userFlows)) {
+                const u = allUsers.find(x => x.id === uid);
+                if(u) await client.from('users').update({balance: u.balance + flow}).eq('id', uid);
+            }
             showToast("Dividendi Distribuiti", "success"); fetchAssets(); 
         }
 
         // ARMY (DYNAMIC)
         function updateArmyUI() {
-            // Calculate Total Power dynamically
             let pwr = 0; let bCount = 0; let fCount = 0;
             unitConfig.forEach(u => {
-                const b = corpArmy.base[u.id] || 0;
-                const f = corpArmy.front[u.id] || 0;
-                pwr += (b + f) * u.pow;
-                bCount += b; fCount += f;
+                const b = corpArmy.base[u.id] || 0; const f = corpArmy.front[u.id] || 0;
+                pwr += (b + f) * u.pow; bCount += b; fCount += f;
             });
             document.getElementById('army-total-power').innerText = pwr;
             document.getElementById('army-treasury-fund').innerText = treasuryVal.toLocaleString() + " GP";
             document.getElementById('count-base').innerText = bCount;
             document.getElementById('count-front').innerText = fCount;
-
-            // Render Recruitment List dynamically
             const list = document.getElementById('recruitment-list'); list.innerHTML = '';
             unitConfig.forEach(u => {
                 list.innerHTML += `<div class="bg-black/40 border border-slate-700 p-3 rounded flex justify-between items-center army-card transition-all cursor-pointer" onclick="recruitUnit('${u.id}', ${u.cost})"><div class="flex items-center gap-3"><div class="w-10 h-10 bg-slate-800 rounded flex items-center justify-center text-slate-400"><i class="fa-solid ${u.icon}"></i></div><div><div class="text-slate-200 font-bold text-sm">${u.name}</div><div class="text-[10px] text-slate-500">Pow: ${u.pow}</div></div></div><div class="text-right"><div class="text-amber-500 font-mono text-xs font-bold">${u.cost} GP</div><div class="text-[9px] text-slate-600 uppercase">Addestra</div></div></div>`;
             });
-
-            // Update Move Dropdown
             const sel = document.getElementById('move-type'); sel.innerHTML = '';
             unitConfig.forEach(u => { sel.innerHTML += `<option value="${u.id}">${u.name}</option>`; });
         }
@@ -239,7 +259,7 @@
             if(currentUser.role_level < 3) return showToast("Serve Grado 3+", "error");
             const type = document.getElementById('move-type').value;
             const amount = parseInt(document.getElementById('move-amount').value);
-            if((corpArmy.base[type]||0) < amount) return showToast("Non hai abbastanza truppe in base", "error");
+            if((corpArmy.base[type]||0) < amount) return showToast("Non hai abbastanza truppe", "error");
             corpArmy.base[type] -= amount;
             if(!corpArmy.front[type]) corpArmy.front[type] = 0;
             corpArmy.front[type] += amount;
@@ -250,17 +270,14 @@
         window.openUnitConfig = () => {
             if(currentUser.role_level < 4) return showToast("Solo Master", "error");
             const list = document.getElementById('unit-config-list'); list.innerHTML = '';
-            unitConfig.forEach((u, idx) => {
-                list.innerHTML += `<div class="flex justify-between items-center bg-black/30 p-2 rounded text-xs"><span>${u.name} (${u.cost}gp)</span> <button onclick="removeUnitType(${idx})" class="text-red-500">X</button></div>`;
-            });
+            unitConfig.forEach((u, idx) => { list.innerHTML += `<div class="flex justify-between items-center bg-black/30 p-2 rounded text-xs"><span>${u.name} (${u.cost}gp)</span> <button onclick="removeUnitType(${idx})" class="text-red-500">X</button></div>`; });
             document.getElementById('modal-unit-config').classList.remove('hidden');
         }
         window.addNewUnitType = async () => {
             const id=document.getElementById('new-unit-id').value, name=document.getElementById('new-unit-name').value, cost=parseInt(document.getElementById('new-unit-cost').value), pow=parseInt(document.getElementById('new-unit-pow').value);
             if(!id || !name || !cost) return;
             unitConfig.push({id, name, cost, pow, icon:'fa-robot'});
-            await saveUnitConfig();
-            closeModal('modal-unit-config'); updateArmyUI();
+            await saveUnitConfig(); closeModal('modal-unit-config'); updateArmyUI();
         }
         window.removeUnitType = async (idx) => { unitConfig.splice(idx, 1); await saveUnitConfig(); openUnitConfig(); updateArmyUI(); }
         async function saveUnitConfig() {
@@ -275,7 +292,21 @@
             else await client.from('investments').insert([{name:'COMANDO ARMATA', current_value:0, roi_rate:0, status:'Attivo', description: JSON.stringify(corpArmy)}]);
         }
 
-        // SHARED UTILS
+        // CHAT
+        window.toggleChat = () => document.getElementById('chat-widget').classList.toggle('hidden');
+        async function fetchChat() {
+            const { data } = await client.from('chat_messages').select('*').order('created_at', {ascending:false}).limit(20);
+            const div = document.getElementById('chat-messages'); div.innerHTML = '';
+            if(data) data.reverse().forEach(m => div.innerHTML += `<div class="chat-msg"><span class="chat-user">${m.username}:</span> <span class="chat-text">${m.msg}</span></div>`);
+            div.scrollTop = div.scrollHeight;
+        }
+        window.sendChat = async () => {
+            const txt = document.getElementById('chat-input').value; if(!txt) return;
+            await client.from('chat_messages').insert([{username:currentUser.username, msg:txt}]);
+            document.getElementById('chat-input').value = ''; fetchChat();
+        }
+
+        // UTILS
         function renderChart(){const ctx=document.getElementById('wealthChart').getContext('2d');chart=new Chart(ctx,{type:'line',data:{labels:[],datasets:[{label:'Patrimonio',data:[],borderColor:'#10b981',tension:0.4}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{display:false},y:{grid:{color:'#1e293b'}}}}});}
         function updateChartData(){if(!chart)return;let total=0;globalData.forEach(a=>{if(!a.owner_id)total+=a.current_value});const now=new Date().toLocaleTimeString();if(chart.data.labels.length>10){chart.data.labels.shift();chart.data.datasets[0].data.shift();}chart.data.labels.push(now);chart.data.datasets[0].data.push(total);chart.update();}
         window.showToast=(msg,type)=>{const t=document.createElement('div');t.className="toast";t.innerText=msg;t.style.borderLeftColor=type==='error'?'#ef4444':'#10b981';document.getElementById('toast-container').appendChild(t);setTimeout(()=>t.remove(),3000);}
