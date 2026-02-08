@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ink Corp. | Management System v25.0</title>
+    <title>Ink Corp. | Management System v26.0</title>
     
     <script src="https://cdn.tailwindcss.com"></script>
     
@@ -27,7 +27,7 @@
         #toast-container { position: fixed; top: 20px; right: 20px; z-index: 9999; }
         .army-card:hover { border-color: #d97706; background-color: rgba(217, 119, 6, 0.1); }
         
-        /* Chat Widget Styles */
+        /* Chat Overlay */
         #chat-widget { position: fixed; bottom: 0; right: 20px; width: 300px; background: #0f172a; border: 1px solid #334155; border-top-left-radius: 8px; border-top-right-radius: 8px; z-index: 80; box-shadow: 0 0 20px rgba(0,0,0,0.5); transition: height 0.3s ease; display: flex; flex-direction: column; }
         #chat-widget.open { height: 400px; }
         #chat-widget.closed { height: 40px; overflow: hidden; }
@@ -45,7 +45,7 @@
 
     <div id="login-screen" class="fixed inset-0 z-[100] flex items-center justify-center bg-black/95">
         <div class="w-full max-w-md p-8 border border-amber-900/50 rounded-lg bg-[#050101] relative">
-            <div class="text-center mb-8"><h1 class="fantasy-font text-5xl text-amber-600 mb-2">INK CORP.</h1><p class="text-slate-500 text-xs tracking-[0.4em]">System v25.0</p></div>
+            <div class="text-center mb-8"><h1 class="fantasy-font text-5xl text-amber-600 mb-2">INK CORP.</h1><p class="text-slate-500 text-xs tracking-[0.4em]">System v26.0</p></div>
             <div id="login-form" class="space-y-4">
                 <input type="text" id="login-user" class="w-full bg-slate-900/50 border border-slate-800 p-3 text-white rounded text-center tracking-widest outline-none" placeholder="NOME UTENTE">
                 <input type="password" id="login-pass" class="w-full bg-slate-900/50 border border-slate-800 p-3 text-white rounded text-center tracking-widest outline-none" placeholder="PASSWORD">
@@ -95,8 +95,11 @@
                     <div class="flex-grow bg-slate-900/50 p-4 rounded border border-slate-800 relative"><canvas id="wealthChart"></canvas></div>
                     <div class="w-48 flex flex-col gap-2">
                         <div class="bg-slate-900 p-2 rounded border border-slate-800"><span class="text-xs font-bold text-slate-400 uppercase block mb-1">Scenario</span><select id="world-state" onchange="updateWorldState()" class="w-full bg-slate-800 text-amber-500 text-xs font-bold outline-none cursor-pointer"><option value="neutral">⚖️ Stabile</option><option value="war">⚔️ Guerra</option><option value="boom">💰 Boom</option><option value="crisis">📉 Crisi</option></select></div>
-                        <div class="bg-slate-900 p-2 rounded border border-slate-800"><span class="text-xs font-bold text-slate-400 uppercase block mb-1">Vista</span><select id="view-filter" onchange="renderGrid()" class="w-full bg-slate-800 text-cyan-500 text-xs font-bold outline-none cursor-pointer"><option value="all" selected>🌐 Tutto</option><option value="corp">🏢 Solo Corp.</option></select></div>
-                        <button onclick="fetchAssets()" class="flex-grow bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded flex flex-col items-center justify-center gap-2 group"><i class="fa-solid fa-rotate text-2xl text-slate-500 group-hover:text-white transition-colors"></i><span class="text-xs font-bold text-slate-400">AGGIORNA</span></button>
+                        <button onclick="openBank()" class="flex-grow bg-emerald-900/20 hover:bg-emerald-900/40 border border-emerald-900/50 rounded flex flex-col items-center justify-center gap-2 group transition-all">
+                            <i class="fa-solid fa-hand-holding-dollar text-2xl text-emerald-500 group-hover:scale-110 transition-transform"></i>
+                            <span class="text-[10px] font-bold text-emerald-400 uppercase">Richiedi Prestito</span>
+                        </button>
+                        <button onclick="fetchAssets()" class="h-8 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded flex items-center justify-center gap-2 group"><i class="fa-solid fa-rotate text-xs text-slate-500 group-hover:text-white transition-colors"></i><span class="text-[10px] font-bold text-slate-400">AGGIORNA</span></button>
                     </div>
                 </div>
                 <div id="asset-grid" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 overflow-y-auto pb-20 pr-1"></div>
@@ -121,6 +124,7 @@
 
     <div id="modal-unit-config" class="fixed inset-0 z-[70] flex items-center justify-center bg-black/95 hidden"><div class="bg-slate-900 border border-slate-700 w-full max-w-lg rounded p-6"><h3 class="text-xl text-white font-bold mb-4">Configurazione Unità (Master)</h3><div id="unit-config-list" class="space-y-2 mb-4 max-h-60 overflow-y-auto"></div><div class="grid grid-cols-4 gap-2 mb-2"><input id="new-unit-id" placeholder="ID" class="bg-slate-800 text-white text-xs p-2 rounded"><input id="new-unit-name" placeholder="Nome" class="bg-slate-800 text-white text-xs p-2 rounded"><input id="new-unit-cost" type="number" placeholder="Costo" class="bg-slate-800 text-white text-xs p-2 rounded"><input id="new-unit-pow" type="number" placeholder="Pow" class="bg-slate-800 text-white text-xs p-2 rounded"></div><div class="flex justify-between"><button onclick="closeModal('modal-unit-config')" class="text-slate-500">Chiudi</button><button onclick="addNewUnitType()" class="bg-emerald-700 text-white px-4 py-1 rounded text-xs">Aggiungi</button></div></div></div>
 
+    <div id="modal-bank" class="fixed inset-0 z-50 flex items-center justify-center bg-black/90 backdrop-blur-sm hidden"><div class="bg-slate-900 border border-emerald-900 w-full max-w-md p-6 rounded-xl relative"><h3 class="fantasy-font text-2xl text-emerald-500 mb-4 text-center">Banca Corporativa</h3><div class="bg-slate-800 p-4 rounded mb-4 text-center"><div class="text-xs text-slate-400">Disponibilità Tesoreria</div><div id="bank-treasury" class="text-xl font-bold text-white">0 GP</div></div><div class="space-y-3"><input type="number" id="loan-amount" class="w-full bg-slate-950 border border-slate-700 p-2 rounded text-white text-center" placeholder="Importo Prestito"><button onclick="requestLoan()" class="w-full bg-emerald-700 hover:bg-emerald-600 text-white font-bold py-2 rounded">Richiedi Prestito (10% Interessi)</button></div><div id="loan-list" class="mt-4 max-h-40 overflow-y-auto space-y-2"></div><button onclick="closeModal('modal-bank')" class="absolute top-2 right-2 text-slate-500"><i class="fa-solid fa-times"></i></button></div></div>
     <div id="modal-edit" class="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm hidden"><div class="bg-slate-900 border border-slate-700 w-full max-w-lg rounded shadow-xl p-6 relative"><h3 id="modal-title" class="fantasy-font text-xl text-white mb-4">Gestione</h3><input type="hidden" id="edit-id"><div class="space-y-3"><input type="text" id="edit-name" class="w-full bg-slate-800 border border-slate-600 p-2 text-white rounded outline-none" placeholder="Nome"><div class="grid grid-cols-2 gap-3"><input type="number" id="edit-value" class="bg-slate-800 border border-slate-600 p-2 text-white rounded outline-none" placeholder="Valore"><input type="number" step="0.1" id="edit-roi" class="bg-slate-800 border border-slate-600 p-2 text-white rounded outline-none" placeholder="ROI %"></div><div class="grid grid-cols-2 gap-3"><select id="edit-risk" class="bg-slate-800 border border-slate-600 p-2 text-white rounded outline-none"><option value="Basso">🟢 Basso</option><option value="Medio">🟡 Medio</option><option value="Alto">🔴 Alto</option><option value="Criminale">☠️ Criminale</option></select><select id="edit-owner" class="bg-slate-800 border border-slate-600 p-2 text-white rounded outline-none"></select></div><div class="flex gap-2 items-center bg-slate-800 p-2 rounded"><label class="text-xs text-slate-400">Prezzo Vendita:</label><input type="number" id="edit-sale" class="bg-transparent text-white w-20 outline-none border-b border-slate-600 text-center" placeholder="0"></div><textarea id="edit-desc" class="w-full h-24 bg-slate-800 border border-slate-600 p-2 text-white rounded outline-none resize-none" placeholder="Desc..."></textarea></div><div class="flex justify-between mt-6 pt-4 border-t border-slate-800"><button onclick="deleteAsset()" id="btn-delete" class="text-red-500 text-xs font-bold uppercase hidden">Elimina</button><div class="flex gap-2 ml-auto"><button onclick="closeModal('modal-edit')" class="text-slate-400 px-4 py-2 hover:text-white">Annulla</button><button onclick="saveAsset()" class="bg-emerald-700 hover:bg-emerald-600 text-white px-6 py-2 rounded font-bold shadow-lg">Salva</button></div></div></div></div>
     <div id="modal-profile" class="fixed inset-0 z-50 flex items-center justify-center bg-black/90 backdrop-blur-sm hidden"><div class="bg-slate-900 w-full max-w-5xl h-[85vh] rounded-xl border border-slate-700 flex overflow-hidden shadow-2xl relative"><button onclick="closeModal('modal-profile')" class="absolute top-4 right-4 text-slate-500 hover:text-white z-10"><i class="fa-solid fa-times text-xl"></i></button><div class="w-1/3 bg-slate-950 border-r border-slate-800 p-6 flex flex-col"><div class="flex flex-col items-center mb-6"><div class="w-24 h-24 rounded-full bg-slate-800 border-2 border-amber-600 flex items-center justify-center text-4xl text-slate-400 mb-4 shadow-[0_0_15px_rgba(217,119,6,0.3)]"><i class="fa-solid fa-user-astronaut"></i></div><h2 id="prof-username" class="text-2xl text-white font-bold fantasy-font">---</h2><span id="prof-role" class="text-xs text-amber-600 uppercase tracking-widest mt-1">---</span></div><div class="bg-slate-900 p-4 rounded border border-slate-800 mb-4"><div class="text-[10px] text-slate-500 uppercase font-bold flex justify-between"><span>Saldo</span><button onclick="openFundsManager()" class="text-emerald-500 hover:underline"><i class="fa-solid fa-coins"></i> Gestisci</button></div><div id="prof-balance" class="text-3xl text-emerald-400 font-mono font-bold mt-1">0 GP</div></div><div class="flex-grow overflow-hidden flex flex-col"><label class="text-[10px] text-slate-500 uppercase font-bold mb-1">Dati Biometrici</label><textarea id="prof-bio" class="flex-grow bg-slate-900 border border-slate-800 rounded p-3 text-xs text-slate-300 resize-none outline-none focus:border-amber-900 mb-2"></textarea><button onclick="saveProfile()" class="bg-slate-800 hover:bg-slate-700 text-slate-300 py-2 rounded text-xs uppercase font-bold border border-slate-700">Salva</button></div></div><div class="w-2/3 bg-slate-900 p-6 flex flex-col"><div class="flex justify-between items-center border-b border-slate-800 pb-4 mb-4"><h3 class="text-xl text-white fantasy-font">Asset Personali</h3><button onclick="openModal('create-personal')" class="bg-emerald-900/30 hover:bg-emerald-900/50 text-emerald-500 border border-emerald-800/50 px-3 py-1.5 rounded text-xs uppercase font-bold">Nuovo</button></div><div id="prof-assets" class="grid grid-cols-2 gap-3 overflow-y-auto content-start flex-grow"></div></div></div></div>
     <div id="modal-missions" class="fixed inset-0 z-50 flex items-center justify-center bg-black/90 backdrop-blur-sm hidden"><div class="bg-slate-900 border border-yellow-900 w-full max-w-2xl h-[70vh] p-6 rounded-xl flex flex-col relative"><h3 class="fantasy-font text-2xl text-yellow-500 mb-4 flex items-center gap-2"><i class="fa-solid fa-scroll"></i> MISSIONI ATTIVE</h3><div id="mission-list" class="flex-grow space-y-2 overflow-y-auto"></div><div class="mt-4 pt-4 border-t border-slate-800"><input type="text" id="new-mission-title" placeholder="Titolo" class="bg-slate-800 text-white p-1 text-xs rounded mb-1 w-full"><div class="flex gap-2"><input type="text" id="new-mission-desc" placeholder="Descrizione" class="bg-slate-800 text-white p-1 text-xs rounded flex-grow"><input type="number" id="new-mission-reward" placeholder="GP" class="bg-slate-800 text-white p-1 text-xs rounded w-20"><button onclick="createMission()" class="bg-yellow-700 text-black px-3 rounded text-xs font-bold">PUBBLICA</button></div></div><button onclick="closeModal('modal-missions')" class="absolute top-4 right-4 text-slate-500 hover:text-white"><i class="fa-solid fa-times text-xl"></i></button></div></div>
@@ -143,7 +147,7 @@
             msg.innerText = "Connessione in corso...";
             try {
                 let {data, error} = await client.from('users').select('*').eq('username', user).eq('password', pass).maybeSingle();
-                if(error) { msg.innerText = "ERRORE TECNICO: " + error.message; return; }
+                if(error) throw new Error(error.message);
                 if(!data) { msg.innerText = "Utente non trovato o Password Errata."; return; }
                 currentUser=data; document.getElementById('login-screen').classList.add('hidden'); document.getElementById('app-interface').classList.remove('hidden'); setTimeout(()=>document.getElementById('app-interface').classList.remove('opacity-0'),100);
                 initApp();
@@ -166,6 +170,7 @@
             initRealtime();
             try { await Promise.all([fetchUsers(), fetchAssets(), fetchLogs(), fetchRivals(), fetchChat(), fetchMissions()]); } catch(e) { console.warn(e); }
             updateArmyUI();
+            setInterval(fetchChat, 5000); // Fallback polling
         }
         function initRealtime() {
             client.channel('public:any').on('postgres_changes', {event:'*', schema:'public'}, payload => {
@@ -201,17 +206,18 @@
         function renderGrid() {
             const grid = document.getElementById('asset-grid'); grid.innerHTML = '';
             let totalCap=0, totalFlow=0; const mult=getMultiplier();
-            const viewFilter = document.getElementById('view-filter').value;
 
             globalData.forEach(item => {
-                if(item.name==='COMANDO ARMATA' || item.name==='SYSTEM_ARMY_CONFIG' || item.name==='TESORERIA') return; // Hide System Assets
+                if(item.name==='COMANDO ARMATA' || item.name==='SYSTEM_ARMY_CONFIG') return; // Hide System Assets (Keep Treasury Visible)
+                
                 const isCorp = !item.owner_id;
                 const flow = Math.floor(item.current_value * (item.roi_rate * mult / 100));
                 
-                if(viewFilter === 'all' || (viewFilter === 'corp' && isCorp)) {
-                    if(isCorp) { totalCap+=item.current_value; if(item.status==='Attivo') totalFlow+=flow; }
-                    const border=item.roi_rate<0?'border-red-900/50':(isCorp?'border-slate-800':'border-amber-900/30');
-                    const ownerLabel = isCorp ? 'INK CORP' : (allUsers.find(u=>u.id===item.owner_id)?.username || 'Privato');
+                // SHOW ONLY CORP ASSETS IN MAIN GRID
+                if(isCorp) {
+                    totalCap+=item.current_value; if(item.status==='Attivo') totalFlow+=flow;
+                    const border = item.name.toUpperCase()==='TESORERIA' ? 'border-amber-500' : (item.roi_rate<0?'border-red-900/50':'border-slate-800');
+                    const ownerLabel = 'INK CORP';
                     
                     grid.innerHTML += `<div class="glass-panel p-4 rounded border ${border} relative hover:bg-slate-900 transition-colors"><div class="flex justify-between mb-2"><div class="text-[9px] text-slate-500 uppercase font-bold">${ownerLabel}</div><div class="text-[9px] ${item.status==='Attivo'?'text-emerald-500':'text-slate-500'} border border-slate-800 px-1 rounded">${item.status}</div></div><div class="font-bold text-slate-200 truncate mb-2">${item.name}</div><div class="grid grid-cols-2 gap-2 text-xs bg-black/20 p-2 rounded mb-2"><div><span class="text-slate-500 block text-[9px]">VALORE</span>${item.current_value.toLocaleString()}</div><div class="text-right"><span class="text-slate-500 block text-[9px]">ROI</span><span class="${item.roi_rate<0?'text-red-400':'text-emerald-400'}">${item.roi_rate}%</span></div></div><div class="flex justify-between items-center mt-2"><div class="text-[10px] text-slate-400">Flow: ${flow>0?'+':''}${flow}</div><button onclick="openEditModal('${item.id}')" class="text-[10px] bg-slate-800 hover:bg-slate-700 text-white px-3 py-1.5 rounded border border-slate-700 font-bold uppercase">GESTISCI</button></div></div>`;
                 }
@@ -247,6 +253,25 @@
             showToast("Dividendi Distribuiti", "success"); fetchAssets(); 
         }
 
+        // BANK / LOANS
+        window.openBank = async () => {
+            document.getElementById('modal-bank').classList.remove('hidden');
+            document.getElementById('bank-treasury').innerText = treasuryVal.toLocaleString() + " GP";
+            const { data } = await client.from('loans').select('*').eq('user_id', currentUser.id);
+            const lDiv = document.getElementById('loan-list'); lDiv.innerHTML = '';
+            if(data) data.forEach(l => lDiv.innerHTML += `<div class="bg-black/30 p-2 rounded text-xs flex justify-between"><span>Debito: ${l.remaining} GP</span><span class="${l.status==='active'?'text-emerald-500':'text-red-500'}">${l.status}</span></div>`);
+        }
+        window.requestLoan = async () => {
+            const amount = parseInt(document.getElementById('loan-amount').value);
+            if(!amount || amount > treasuryVal) return showToast("Importo non valido o Tesoreria insufficiente", "error");
+            await client.from('loans').insert([{user_id: currentUser.id, amount: amount, remaining: Math.floor(amount*1.1), status: 'active'}]);
+            await client.from('users').update({balance: currentUser.balance + amount}).eq('id', currentUser.id);
+            // Deduct from Treasury
+            let t = globalData.find(a => a.name === 'TESORERIA');
+            if(t) await client.from('investments').update({current_value: t.current_value - amount}).eq('id', t.id);
+            showToast("Prestito Erogato", "success"); closeModal('modal-bank'); fetchAssets();
+        }
+
         // ARMY (DYNAMIC & FIXED)
         function updateArmyUI() {
             let pwr = 0; let bCount = 0; let fCount = 0;
@@ -271,9 +296,15 @@
         window.recruitUnit = async (type, cost) => {
             if(currentUser.role_level < 3) return showToast("Serve Grado 3+", "error");
             if(treasuryVal < cost) return showToast("Fondi insufficienti", "error");
-            await client.from('investments').update({current_value: treasuryVal - cost}).eq('name', 'TESORERIA');
+            
+            // Deduct Treasury
+            let t = globalData.find(a => a.name === 'TESORERIA');
+            if(t) await client.from('investments').update({current_value: t.current_value - cost}).eq('id', t.id);
+            
+            // Add Unit
             if(!corpArmy.base[type]) corpArmy.base[type] = 0;
             corpArmy.base[type]++;
+            
             await updateArmyAsset(); fetchAssets(); updateArmyUI(); showToast("Unità Reclutata", "success"); playSound('sfx-march');
         }
 
