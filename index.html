@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ink Corp. | Management v33.0 (Market Update)</title>
+    <title>Ink Corp. | Management v33.1 (Patched)</title>
     
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
@@ -85,7 +85,7 @@
     <div id="login-screen" class="fixed inset-0 z-[200] bg-black/95 flex items-center justify-center">
         <div class="glass-panel w-full max-w-md p-10 rounded-2xl text-center relative border border-amber-900/30">
             <h1 class="brand-font text-5xl text-white mb-2">INK CORP.</h1>
-            <p class="text-amber-500/70 text-xs tracking-[0.4em] uppercase mb-10 font-bold">System v33.0 Stable</p>
+            <p class="text-amber-500/70 text-xs tracking-[0.4em] uppercase mb-10 font-bold">System v33.1 Patched</p>
             <div id="login-form" class="space-y-4">
                 <input id="l-user" class="w-full bg-black/50 border border-slate-700 rounded-lg py-3 px-4 text-white text-center focus:border-amber-500 outline-none" placeholder="IDENTIFICATIVO">
                 <input id="l-pass" type="password" class="w-full bg-black/50 border border-slate-700 rounded-lg py-3 px-4 text-white text-center focus:border-amber-500 outline-none" placeholder="CODICE ACCESSO">
@@ -151,7 +151,7 @@
                         <div class="w-1/3 glass-panel rounded-xl p-4 flex flex-col"><div class="flex justify-between mb-4"><span class="text-red-500 font-bold text-xs uppercase">Caserma</span><button onclick="openUnitConfig()" class="text-[9px] bg-slate-800 px-2 rounded text-white">CONFIG</button></div><div id="recruitment-list" class="flex-grow overflow-y-auto space-y-2"></div></div>
                         <div class="w-2/3 flex flex-col gap-6">
                             <div class="h-2/3 glass-panel rounded-xl p-8 flex justify-between items-center bg-black/20"><div class="text-center"><div class="text-slate-500 text-xs font-bold mb-2">BASE</div><div class="text-4xl text-slate-400" id="c-base">0</div></div><div class="h-px bg-slate-700 flex-grow mx-8"></div><div class="text-center"><div class="text-red-500 text-xs font-bold mb-2">FRONTE</div><div class="text-4xl text-red-500" id="c-front">0</div></div></div>
-                            <div class="h-1/3 glass-panel rounded-xl p-6 flex items-center gap-4"><select id="m-type" class="bg-slate-900 text-white text-xs p-2 rounded flex-grow"></select><input id="m-amt" type="number" value="1" class="bg-slate-900 text-white text-xs p-2 rounded w-20"><button onclick="moveTroops()" class="bg-red-900 text-white px-6 py-2 rounded text-xs font-bold hover:bg-red-800">SPOSTA</button></div>
+                            <div class="h-1/3 glass-panel rounded-xl p-6 flex items-center gap-4"><select id="m-type" class="bg-slate-900 text-white text-xs p-2 rounded flex-grow"></select><input id="m-amt" type="number" value="1" min="1" class="bg-slate-900 text-white text-xs p-2 rounded w-20"><button onclick="moveTroops()" class="bg-red-900 text-white px-6 py-2 rounded text-xs font-bold hover:bg-red-800">SPOSTA</button></div>
                         </div>
                     </div>
                     <div id="wc-intel" class="hidden flex-grow flex gap-6"><div class="w-1/3 space-y-4" id="rivals-container"></div><div class="w-1/3 glass-panel rounded-xl p-4 flex flex-col"><div class="text-purple-500 font-bold text-xs mb-2">LOG OPERAZIONI</div><div id="war-console" class="flex-grow bg-black/30 p-2 font-mono text-xs text-slate-400 overflow-y-auto"></div></div></div>
@@ -167,7 +167,7 @@
     
     <div id="m-prof" class="fixed inset-0 z-[100] bg-black/90 hidden flex items-center justify-center"><div class="bg-[#05070a] border border-slate-800 w-[900px] h-[600px] rounded-xl flex overflow-hidden relative"><button onclick="document.getElementById('m-prof').classList.add('hidden')" class="absolute top-4 right-4 text-slate-500 hover:text-white"><i class="fa-solid fa-times"></i></button><div class="w-1/3 border-r border-slate-800 p-8 text-center"><div class="text-5xl text-slate-600 mb-4"><i class="fa-solid fa-user-circle"></i></div><h2 id="p-name" class="text-2xl text-white font-bold">---</h2><div id="p-bal" class="text-emerald-400 font-mono text-xl my-4">0 GP</div><button onclick="fundMan()" class="text-xs text-slate-400 hover:text-white underline mb-6">Gestisci Fondi</button><textarea id="p-bio" class="w-full bg-slate-900 border border-slate-800 p-2 rounded text-xs text-slate-300 h-32"></textarea><button onclick="saveBio()" class="w-full bg-slate-800 text-slate-300 mt-2 py-2 rounded text-xs font-bold">SALVA DATI</button></div><div class="w-2/3 p-8 flex flex-col"><div class="flex justify-between items-center mb-4"><h3 class="text-white font-bold">ZAINO PERSONALE</h3><button onclick="modal('create','personal')" class="bg-emerald-900/50 text-emerald-400 px-3 py-1 rounded text-xs border border-emerald-800">+ AGGIUNGI</button></div><div id="p-grid" class="flex-grow grid grid-cols-2 gap-3 overflow-y-auto content-start"></div></div></div></div>
 
-    <div id="m-bank" class="fixed inset-0 z-[100] bg-black/80 hidden flex items-center justify-center"><div class="glass-panel w-96 p-6 rounded-xl"><h3 class="text-emerald-500 font-bold mb-4 text-center text-xl">BANCA</h3><div class="text-center mb-4"><div class="text-xs text-slate-400">Disponibilità</div><div id="b-avail" class="text-xl text-white font-mono font-bold">0 GP</div></div><input id="l-amt" type="number" class="w-full bg-slate-900 p-2 rounded text-white text-center mb-2" placeholder="Importo"><button onclick="reqLoan()" class="w-full bg-emerald-700 text-white font-bold py-2 rounded mb-4">RICHIESTA</button><div id="l-list" class="space-y-1"></div><button onclick="document.getElementById('m-bank').classList.add('hidden')" class="w-full text-slate-500 text-xs mt-4">CHIUDI</button></div></div>
+    <div id="m-bank" class="fixed inset-0 z-[100] bg-black/80 hidden flex items-center justify-center"><div class="glass-panel w-96 p-6 rounded-xl"><h3 class="text-emerald-500 font-bold mb-4 text-center text-xl">BANCA</h3><div class="text-center mb-4"><div class="text-xs text-slate-400">Disponibilità</div><div id="b-avail" class="text-xl text-white font-mono font-bold">0 GP</div></div><input id="l-amt" type="number" min="1" class="w-full bg-slate-900 p-2 rounded text-white text-center mb-2" placeholder="Importo"><button onclick="reqLoan()" class="w-full bg-emerald-700 text-white font-bold py-2 rounded mb-4">RICHIESTA</button><div id="l-list" class="space-y-1"></div><button onclick="document.getElementById('m-bank').classList.add('hidden')" class="w-full text-slate-500 text-xs mt-4">CHIUDI</button></div></div>
 
     <script>
         // CONFIGURAZIONE
@@ -181,15 +181,15 @@
         let unitConfig = [{id:'infantry',n:'Fanteria',c:100,p:1}, {id:'tank',n:'Carro',c:2500,p:30}];
         let targetUid = null; 
 
-        // --- AVVIO AUTOMATICO (FIX LOGIN: La barra scompare dopo 1 secondo) ---
+        // HELPER PER JSON SICURO
+        function safeJSON(str, def) {
+            try { return str ? JSON.parse(str) : def; } catch(e) { console.error("JSON Error", e); return def; }
+        }
+
+        // --- AVVIO AUTOMATICO ---
         window.addEventListener('load', () => {
-            setTimeout(() => {
-                const loader = document.getElementById('loading-overlay');
-                if(loader) {
-                    loader.classList.add('opacity-0');
-                    setTimeout(() => loader.classList.add('hidden'), 500);
-                }
-            }, 1000);
+            // Loader nascosto solo dopo interazione o timeout se già loggato
+            // Non facciamo nulla qui, il loader lo gestisce authLogin
         });
 
         // AUTH
@@ -204,11 +204,21 @@
                 user = data;
                 if(!user.personal_assets) user.personal_assets = [];
                 
+                // Animazione UI
+                const loader = document.getElementById('loading-overlay');
                 document.getElementById('login-screen').classList.add('hidden');
-                document.getElementById('app-ui').classList.remove('hidden');
-                document.getElementById('app-ui').classList.remove('opacity-0');
                 
-                initApp();
+                // Inizializza app
+                await initApp();
+
+                // Rimuovi loader
+                loader.classList.add('opacity-0');
+                document.getElementById('app-ui').classList.remove('hidden');
+                setTimeout(() => {
+                    document.getElementById('app-ui').classList.remove('opacity-0');
+                    loader.classList.add('hidden');
+                }, 500);
+
             } catch(e) { msg(e.message); }
         }
         function msg(t) { document.getElementById('l-msg').innerText = t; }
@@ -229,10 +239,12 @@
                     corpData = inv;
                     let t = inv.find(x => x.name === 'TESORERIA'); treasury = t ? t.current_value : 0;
                     if(!t) client.from('investments').insert([{name:'TESORERIA',current_value:1000,roi_rate:0,status:'Attivo'}]);
+                    
                     let a = inv.find(x => x.name === 'COMANDO ARMATA'); 
-                    if(a&&a.description) try{corpArmy=JSON.parse(a.description)}catch(e){}
+                    corpArmy = a ? safeJSON(a.description, {base:{}, front:{}}) : {base:{}, front:{}};
+                    
                     let c = inv.find(x => x.name === 'SYSTEM_ARMY_CONFIG'); 
-                    if(c&&c.description) try{unitConfig=JSON.parse(c.description)}catch(e){}
+                    if(c) unitConfig = safeJSON(c.description, unitConfig);
                 }
 
                 // 2. Users
@@ -245,7 +257,7 @@
                     if(me) user = me;
                 }
 
-                // 4. Rivals (Lettura ID testo corretta)
+                // 4. Rivals
                 let {data: riv} = await client.from('rivals').select('*');
                 if(riv && riv.length) { 
                     let rB = riv.find(r => r.id === 'B');
@@ -283,15 +295,14 @@
                 }
             });
 
-            // --- MERCATO MIGLIORATO ---
+            // Mercato
             const m = document.getElementById('market-list'); m.innerHTML = '';
-            const sales = corpData.filter(a => a.sale_price > 0); // Mostra tutto ciò che ha un prezzo
+            const sales = corpData.filter(a => a.sale_price > 0);
             
             if(sales.length===0) m.innerHTML='<div class="col-span-3 text-center text-slate-500 italic">Nessun asset in vendita.</div>';
             
             sales.forEach(a => {
                 const isMine = a.owner_id === user.id;
-                // Se è mio mostro pulsante RITIRA, se è d'altri ACQUISTA
                 const btnAction = isMine 
                     ? `<button onclick="withdrawAsset('${a.id}')" class="w-full mt-2 bg-slate-800 text-slate-400 py-1 rounded text-xs font-bold uppercase hover:bg-slate-700 border border-slate-600">Ritira vendita</button>`
                     : `<button onclick="buyAsset('${a.id}')" class="w-full mt-2 bg-cyan-900/50 text-cyan-400 py-1 rounded text-xs font-bold uppercase hover:bg-cyan-900 border border-cyan-800">Acquista</button>`;
@@ -340,37 +351,58 @@
                     document.getElementById('e-desc').value = item.description;
                     document.getElementById('e-sale').value = item.sale_price;
                 } else {
-                    client.from('users').select('personal_assets').eq('id', targetUid).single().then(({data}) => {
-                        item = data.personal_assets[id];
-                        document.getElementById('e-name').value = item.name;
-                        document.getElementById('e-val').value = item.val;
-                        document.getElementById('e-roi').value = item.roi;
-                        document.getElementById('e-desc').value = item.desc;
-                        document.getElementById('e-sale').value = item.sale || '';
-                    });
+                    // Per sicurezza usiamo i dati freschi da 'user' se è il mio profilo
+                    const list = (targetUid === user.id) ? user.personal_assets : []; 
+                    // Se sto editando altri, dovrei avere i dati ma per semplicità blocco edit altrui se non caricati
+                    if(targetUid !== user.id) {
+                         client.from('users').select('personal_assets').eq('id', targetUid).single().then(({data}) => {
+                            if(data && data.personal_assets[id]) {
+                                item = data.personal_assets[id];
+                                fillModal(item);
+                            }
+                        });
+                        return;
+                    }
+                    item = list[id];
+                    fillModal(item);
                 }
             }
+        }
+
+        function fillModal(item) {
+            document.getElementById('e-name').value = item.name || '';
+            document.getElementById('e-val').value = item.val || 0;
+            document.getElementById('e-roi').value = item.roi || 0;
+            document.getElementById('e-desc').value = item.desc || '';
+            document.getElementById('e-sale').value = item.sale || '';
         }
 
         window.saveAsset = async () => {
             const mode = document.getElementById('e-mode').value;
             const id = document.getElementById('e-id').value;
             const name = document.getElementById('e-name').value;
-            const val = parseInt(document.getElementById('e-val').value)||0;
+            // FIX: Assicura numeri validi
+            const val = Math.abs(parseInt(document.getElementById('e-val').value))||0;
             const roi = parseFloat(document.getElementById('e-roi').value)||0;
             const desc = document.getElementById('e-desc').value;
-            const sale = parseInt(document.getElementById('e-sale').value)||null;
+            let sale = parseInt(document.getElementById('e-sale').value);
+            if(isNaN(sale) || sale < 0) sale = null;
 
             if(mode === 'corp') {
                 const p = {name, current_value:val, roi_rate:roi, description:desc, sale_price:sale, status:'Attivo'};
                 if(id) await client.from('investments').update(p).eq('id',id); else await client.from('investments').insert([p]);
             } else {
                 const uid = targetUid || user.id;
+                // FIX: Rileggiamo sempre prima di salvare per evitare overwrite di array
                 let {data: u} = await client.from('users').select('personal_assets').eq('id', uid).single();
                 let list = u.personal_assets || [];
                 const newItem = {name, val, roi, desc, sale};
-                if(id !== '') list[id] = newItem; else list.push(newItem);
+                
+                if(id !== '' && list[id]) list[id] = newItem; 
+                else list.push(newItem);
+                
                 await client.from('users').update({personal_assets: list}).eq('id', uid);
+                // Aggiorniamo la vista profilo aperta
                 openProfile(uid);
             }
             document.getElementById('m-edit').classList.add('hidden');
@@ -384,9 +416,10 @@
             if(mode === 'corp') await client.from('investments').delete().eq('id',id);
             else {
                 const uid = targetUid || user.id;
+                // FIX: Ricarica lista prima di cancellare
                 let {data: u} = await client.from('users').select('personal_assets').eq('id', uid).single();
                 let list = u.personal_assets || []; 
-                if(list.length > id) {
+                if(list[id]) {
                     list.splice(id, 1);
                     await client.from('users').update({personal_assets: list}).eq('id', uid);
                     openProfile(uid);
@@ -396,43 +429,50 @@
             refreshData();
         }
 
-        // --- FUNZIONI MERCATO AVANZATE ---
-        
-        // 1. Compra Asset (Sicuro + Log)
+        // --- MERCATO (FIXED) ---
         window.buyAsset = async (id) => {
-            const asset = corpData.find(a => a.id == id);
-            if(!asset) return showToast("Errore asset", "error");
-            if(user.balance < asset.sale_price) return showToast("Saldo insufficiente", "error");
+            // 1. Controllo Locale Preliminare
+            if(user.balance < 0) return showToast("Saldo negativo!", "error");
 
-            // Togli soldi a chi compra
-            await client.from('users').update({balance: user.balance - asset.sale_price}).eq('id', user.id);
+            // 2. FETCH FRESCA: Controlla che sia ANCORA in vendita nel DB
+            let {data: freshAsset} = await client.from('investments').select('*').eq('id', id).single();
+            
+            if(!freshAsset || freshAsset.sale_price === null || freshAsset.sale_price <= 0) {
+                await refreshData();
+                return showToast("Oggetto non più disponibile", "error");
+            }
+            
+            if(freshAsset.owner_id === user.id) return showToast("È già tuo", "error");
+            if(user.balance < freshAsset.sale_price) return showToast("Saldo insufficiente", "error");
+
+            // 3. ESECUZIONE
+            // Togli soldi
+            await client.from('users').update({balance: user.balance - freshAsset.sale_price}).eq('id', user.id);
             
             // Dai soldi al venditore
-            let {data: seller} = await client.from('users').select('balance, username').eq('id', asset.owner_id).single();
-            if(seller) await client.from('users').update({balance: seller.balance + asset.sale_price}).eq('id', asset.owner_id);
+            let {data: seller} = await client.from('users').select('balance, username').eq('id', freshAsset.owner_id).single();
+            if(seller) await client.from('users').update({balance: seller.balance + freshAsset.sale_price}).eq('id', freshAsset.owner_id);
             
-            // Trasferisci proprietà
+            // Trasferisci
             await client.from('investments').update({owner_id: user.id, sale_price: null}).eq('id', id);
 
-            // Log Transazione
-            const logMsg = `MERCATO: ${user.username} ha comprato ${asset.name} da ${seller ? seller.username : '???'} per ${asset.sale_price} GP`;
+            // Log
+            const logMsg = `MERCATO: ${user.username} ha comprato ${freshAsset.name} per ${freshAsset.sale_price} GP`;
             await client.from('audit_logs').insert([{username: 'SYSTEM', action: logMsg}]);
 
             showToast("Acquistato!", "success"); 
             refreshData();
         }
 
-        // 2. Ritira Asset (Nuova funzione)
         window.withdrawAsset = async (id) => {
             if(!confirm("Ritirare dalla vendita?")) return;
-            // Imposta prezzo vendita a null
             await client.from('investments').update({sale_price: null}).eq('id', id);
             showToast("Ritirato dal mercato", "success");
             refreshData();
         }
 
 
-        // --- UTILITY E GRAFICA ---
+        // --- UTILITY ---
         function nav(p) { ['dash','assets','war','market','roster'].forEach(v=>document.getElementById('v-'+v).classList.add('hidden')); document.querySelectorAll('.nav-item').forEach(l=>l.classList.remove('active')); document.getElementById('v-'+p).classList.remove('hidden'); document.getElementById('n-'+p).classList.add('active'); document.getElementById('p-title').innerText=p.toUpperCase(); }
         function warTab(t) { document.getElementById('wc-army').classList.toggle('hidden', t!=='army'); document.getElementById('wc-intel').classList.toggle('hidden', t!=='intel'); }
         function renderChart(){const ctx=document.getElementById('chart').getContext('2d');chart=new Chart(ctx,{type:'line',data:{labels:[1,2,3,4,5],datasets:[{label:'Trend',data:[10000,12000,11000,13000,12500],borderColor:'#d97706',tension:0.4}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{display:false},y:{grid:{color:'#1e293b'}}}}});}
@@ -486,10 +526,19 @@
             });
         }
         window.saveBio = async () => { await client.from('users').update({bio:document.getElementById('p-bio').value}).eq('id',targetUid); showToast("Salvato","success"); }
-        window.fundMan = async () => { if(user.role_level<4)return; const v=parseInt(prompt("Modifica (+/-):")); if(v) { await client.from('users').update({balance: (parseInt(document.getElementById('p-bal').innerText)+v)}).eq('id',targetUid); openProfile(targetUid); } }
+        window.fundMan = async () => { 
+            if(user.role_level<4)return; 
+            const v=parseInt(prompt("Modifica (+/-):")); 
+            // Qui ammettiamo negativi perché è funzione ADMIN
+            if(!isNaN(v)) { 
+                const cur = parseInt(document.getElementById('p-bal').innerText);
+                await client.from('users').update({balance: cur+v}).eq('id',targetUid); 
+                openProfile(targetUid); 
+            } 
+        }
 
 
-        // --- BANK ---
+        // --- BANK (FIXED) ---
         window.openBank = async () => {
             document.getElementById('m-bank').classList.remove('hidden');
             document.getElementById('b-avail').innerText = treasury.toLocaleString()+" GP";
@@ -507,8 +556,10 @@
         }
 
         window.reqLoan = async () => {
-            const v = parseInt(document.getElementById('l-amt').value);
-            if(!v || v > treasury) return showToast("Errore importo", "error");
+            // FIX: Assicura valore positivo
+            const v = Math.abs(parseInt(document.getElementById('l-amt').value));
+            if(!v || v > treasury) return showToast("Importo non valido", "error");
+            
             await client.from('loans').insert([{user_id:user.id,amount:v,remaining:Math.floor(v*1.1),status:'active'}]);
             let t = corpData.find(x => x.name === 'TESORERIA');
             await client.from('investments').update({current_value: t.current_value - v}).eq('id', t.id);
@@ -532,10 +583,14 @@
             openBank(); refreshData();
         }
 
-        // --- ARMY ---
+        // --- ARMY (FIXED) ---
         function renderArmy() {
             let b=0, f=0;
-            unitConfig.forEach(u=>{ if(!corpArmy.base)corpArmy.base={}; if(!corpArmy.front)corpArmy.front={}; b+=corpArmy.base[u.id]||0; f+=corpArmy.front[u.id]||0; });
+            // Safe traversal
+            unitConfig.forEach(u=>{ 
+                b+=(corpArmy.base && corpArmy.base[u.id])||0; 
+                f+=(corpArmy.front && corpArmy.front[u.id])||0; 
+            });
             document.getElementById('c-base').innerText = b; document.getElementById('c-front').innerText = f;
             const l = document.getElementById('recruitment-list'); l.innerHTML = '';
             const s = document.getElementById('m-type'); s.innerHTML = '';
@@ -547,11 +602,13 @@
         
         window.recruit = async (id, cost) => {
             if(user.role_level<3) return showToast("Serve grado Direttore", "error");
+            if(cost <= 0) return; // Prevent exploit
             if(treasury < cost) return showToast("Fondi insufficienti", "error");
 
             let {data: armyInv} = await client.from('investments').select('*').eq('name', 'COMANDO ARMATA').single();
-            let freshArmy = armyInv && armyInv.description ? JSON.parse(armyInv.description) : {base:{}, front:{}};
+            let freshArmy = safeJSON(armyInv.description, {base:{}, front:{}});
 
+            if(!freshArmy.base) freshArmy.base = {};
             if(!freshArmy.base[id]) freshArmy.base[id] = 0; 
             freshArmy.base[id]++;
 
@@ -566,12 +623,18 @@
         window.moveTroops = async () => {
             if(user.role_level<3) return showToast("Serve grado Direttore", "error");
             const type = document.getElementById('m-type').value;
-            const amt = parseInt(document.getElementById('m-amt').value);
+            // FIX: Assicura positivo
+            const amt = Math.abs(parseInt(document.getElementById('m-amt').value));
+            if(!amt) return;
 
             let {data: armyInv} = await client.from('investments').select('*').eq('name', 'COMANDO ARMATA').single();
-            let freshArmy = armyInv && armyInv.description ? JSON.parse(armyInv.description) : {base:{}, front:{}};
+            let freshArmy = safeJSON(armyInv.description, {base:{}, front:{}});
+
+            if(!freshArmy.base) freshArmy.base = {};
+            if(!freshArmy.front) freshArmy.front = {};
 
             if((freshArmy.base[type]||0) < amt) return showToast("Truppe insufficienti", "error");
+            
             freshArmy.base[type] -= amt; 
             if(!freshArmy.front[type]) freshArmy.front[type]=0; 
             freshArmy.front[type] += amt;
