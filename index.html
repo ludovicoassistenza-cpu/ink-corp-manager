@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ink Corp. | Management v33.1 (Patched)</title>
+    <title>Ink Corp. | Management v33.2 (Fix Login)</title>
     
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
@@ -85,7 +85,7 @@
     <div id="login-screen" class="fixed inset-0 z-[200] bg-black/95 flex items-center justify-center">
         <div class="glass-panel w-full max-w-md p-10 rounded-2xl text-center relative border border-amber-900/30">
             <h1 class="brand-font text-5xl text-white mb-2">INK CORP.</h1>
-            <p class="text-amber-500/70 text-xs tracking-[0.4em] uppercase mb-10 font-bold">System v33.1 Patched</p>
+            <p class="text-amber-500/70 text-xs tracking-[0.4em] uppercase mb-10 font-bold">System v33.2 Stable</p>
             <div id="login-form" class="space-y-4">
                 <input id="l-user" class="w-full bg-black/50 border border-slate-700 rounded-lg py-3 px-4 text-white text-center focus:border-amber-500 outline-none" placeholder="IDENTIFICATIVO">
                 <input id="l-pass" type="password" class="w-full bg-black/50 border border-slate-700 rounded-lg py-3 px-4 text-white text-center focus:border-amber-500 outline-none" placeholder="CODICE ACCESSO">
@@ -188,8 +188,14 @@
 
         // --- AVVIO AUTOMATICO ---
         window.addEventListener('load', () => {
-            // Loader nascosto solo dopo interazione o timeout se già loggato
-            // Non facciamo nulla qui, il loader lo gestisce authLogin
+            // FIX: Nasconde il loader iniziale per mostrare il login
+            setTimeout(() => {
+                const loader = document.getElementById('loading-overlay');
+                if(loader) {
+                    loader.classList.add('opacity-0');
+                    setTimeout(() => loader.classList.add('hidden'), 500);
+                }
+            }, 1000);
         });
 
         // AUTH
@@ -198,14 +204,18 @@
             const p = document.getElementById('l-pass').value.trim();
             if(!u || !p) return msg("Inserisci dati");
             
+            // Ri-mostra loader durante il check
+            document.getElementById('loading-text').innerText = "Verifica credenziali...";
+            const loader = document.getElementById('loading-overlay');
+            loader.classList.remove('hidden');
+            setTimeout(()=>loader.classList.remove('opacity-0'), 10);
+
             try {
                 let {data, error} = await client.from('users').select('*').eq('username', u).eq('password', p).maybeSingle();
                 if(error || !data) throw new Error("Credenziali errate");
                 user = data;
                 if(!user.personal_assets) user.personal_assets = [];
                 
-                // Animazione UI
-                const loader = document.getElementById('loading-overlay');
                 document.getElementById('login-screen').classList.add('hidden');
                 
                 // Inizializza app
@@ -219,7 +229,12 @@
                     loader.classList.add('hidden');
                 }, 500);
 
-            } catch(e) { msg(e.message); }
+            } catch(e) { 
+                msg(e.message); 
+                // Nascondi loader se fallisce
+                loader.classList.add('opacity-0');
+                setTimeout(() => loader.classList.add('hidden'), 500);
+            }
         }
         function msg(t) { document.getElementById('l-msg').innerText = t; }
 
@@ -351,9 +366,7 @@
                     document.getElementById('e-desc').value = item.description;
                     document.getElementById('e-sale').value = item.sale_price;
                 } else {
-                    // Per sicurezza usiamo i dati freschi da 'user' se è il mio profilo
                     const list = (targetUid === user.id) ? user.personal_assets : []; 
-                    // Se sto editando altri, dovrei avere i dati ma per semplicità blocco edit altrui se non caricati
                     if(targetUid !== user.id) {
                          client.from('users').select('personal_assets').eq('id', targetUid).single().then(({data}) => {
                             if(data && data.personal_assets[id]) {
@@ -381,7 +394,6 @@
             const mode = document.getElementById('e-mode').value;
             const id = document.getElementById('e-id').value;
             const name = document.getElementById('e-name').value;
-            // FIX: Assicura numeri validi
             const val = Math.abs(parseInt(document.getElementById('e-val').value))||0;
             const roi = parseFloat(document.getElementById('e-roi').value)||0;
             const desc = document.getElementById('e-desc').value;
@@ -393,16 +405,12 @@
                 if(id) await client.from('investments').update(p).eq('id',id); else await client.from('investments').insert([p]);
             } else {
                 const uid = targetUid || user.id;
-                // FIX: Rileggiamo sempre prima di salvare per evitare overwrite di array
                 let {data: u} = await client.from('users').select('personal_assets').eq('id', uid).single();
                 let list = u.personal_assets || [];
                 const newItem = {name, val, roi, desc, sale};
-                
                 if(id !== '' && list[id]) list[id] = newItem; 
                 else list.push(newItem);
-                
                 await client.from('users').update({personal_assets: list}).eq('id', uid);
-                // Aggiorniamo la vista profilo aperta
                 openProfile(uid);
             }
             document.getElementById('m-edit').classList.add('hidden');
@@ -416,7 +424,6 @@
             if(mode === 'corp') await client.from('investments').delete().eq('id',id);
             else {
                 const uid = targetUid || user.id;
-                // FIX: Ricarica lista prima di cancellare
                 let {data: u} = await client.from('users').select('personal_assets').eq('id', uid).single();
                 let list = u.personal_assets || []; 
                 if(list[id]) {
@@ -431,10 +438,7 @@
 
         // --- MERCATO (FIXED) ---
         window.buyAsset = async (id) => {
-            // 1. Controllo Locale Preliminare
             if(user.balance < 0) return showToast("Saldo negativo!", "error");
-
-            // 2. FETCH FRESCA: Controlla che sia ANCORA in vendita nel DB
             let {data: freshAsset} = await client.from('investments').select('*').eq('id', id).single();
             
             if(!freshAsset || freshAsset.sale_price === null || freshAsset.sale_price <= 0) {
@@ -445,21 +449,13 @@
             if(freshAsset.owner_id === user.id) return showToast("È già tuo", "error");
             if(user.balance < freshAsset.sale_price) return showToast("Saldo insufficiente", "error");
 
-            // 3. ESECUZIONE
-            // Togli soldi
             await client.from('users').update({balance: user.balance - freshAsset.sale_price}).eq('id', user.id);
-            
-            // Dai soldi al venditore
             let {data: seller} = await client.from('users').select('balance, username').eq('id', freshAsset.owner_id).single();
             if(seller) await client.from('users').update({balance: seller.balance + freshAsset.sale_price}).eq('id', freshAsset.owner_id);
-            
-            // Trasferisci
             await client.from('investments').update({owner_id: user.id, sale_price: null}).eq('id', id);
-
-            // Log
+            
             const logMsg = `MERCATO: ${user.username} ha comprato ${freshAsset.name} per ${freshAsset.sale_price} GP`;
             await client.from('audit_logs').insert([{username: 'SYSTEM', action: logMsg}]);
-
             showToast("Acquistato!", "success"); 
             refreshData();
         }
@@ -471,12 +467,10 @@
             refreshData();
         }
 
-
         // --- UTILITY ---
         function nav(p) { ['dash','assets','war','market','roster'].forEach(v=>document.getElementById('v-'+v).classList.add('hidden')); document.querySelectorAll('.nav-item').forEach(l=>l.classList.remove('active')); document.getElementById('v-'+p).classList.remove('hidden'); document.getElementById('n-'+p).classList.add('active'); document.getElementById('p-title').innerText=p.toUpperCase(); }
         function warTab(t) { document.getElementById('wc-army').classList.toggle('hidden', t!=='army'); document.getElementById('wc-intel').classList.toggle('hidden', t!=='intel'); }
         function renderChart(){const ctx=document.getElementById('chart').getContext('2d');chart=new Chart(ctx,{type:'line',data:{labels:[1,2,3,4,5],datasets:[{label:'Trend',data:[10000,12000,11000,13000,12500],borderColor:'#d97706',tension:0.4}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{display:false},y:{grid:{color:'#1e293b'}}}}});}
-        function updateChartData(){if(!chart)return;let t=0;corpData.forEach(a=>{if(!a.owner_id&&a.name!=='COMANDO ARMATA')t+=a.current_value});const now=new Date().toLocaleTimeString();if(chart.data.labels.length>10){chart.data.labels.shift();chart.data.datasets[0].data.shift();}chart.data.labels.push(now);chart.data.datasets[0].data.push(t);chart.update();}
         window.showToast=(m,t)=>{const e=document.createElement('div');e.className="toast text-white text-xs font-bold";e.innerHTML=m;e.style.borderColor=t==='error'?'#ef4444':'#10b981';document.getElementById('toast-con').appendChild(e);setTimeout(()=>e.remove(),3000);}
         function renderRivals() { const c=document.getElementById('rivals-container'); c.innerHTML=''; ['B','C'].forEach(r=>{ const val=rivals[r]||0; c.innerHTML+=`<div class="glass-panel p-4 mb-2"><div class="flex justify-between font-bold text-${r==='B'?'red':'orange'}-500"><span>RIVALE ${r}</span><span>${val}%</span></div><div class="h-2 bg-black rounded mt-2"><div class="h-full bg-${r==='B'?'red':'orange'}-600" style="width:${val}%"></div></div></div>`; }); }
         
@@ -497,9 +491,7 @@
             if(user.role_level < 3) return showToast("Serve grado Direttore", "error");
             let flow = 0;
             corpData.forEach(a => {
-                if(!a.owner_id && a.status==='Attivo' && a.name!=='TESORERIA') {
-                    flow += Math.floor(a.current_value * (a.roi_rate/100));
-                }
+                if(!a.owner_id && a.status==='Attivo' && a.name!=='TESORERIA') flow += Math.floor(a.current_value * (a.roi_rate/100));
             });
             if(flow <= 0) return showToast("Nessun flusso", "error");
             let t = corpData.find(x => x.name === 'TESORERIA');
@@ -508,7 +500,6 @@
             refreshData(); showToast(`Riscossi ${flow} GP`, "success");
         }
 
-        // --- PROFILE ---
         window.openProfile = async (uid) => {
             targetUid = uid;
             document.getElementById('m-prof').classList.remove('hidden');
@@ -517,7 +508,6 @@
             document.getElementById('p-name').innerText = u.username;
             document.getElementById('p-bal').innerText = u.balance + " GP";
             document.getElementById('p-bio').value = u.bio || "";
-            
             const g = document.getElementById('p-grid'); g.innerHTML = '';
             const list = u.personal_assets || [];
             if(list.length === 0) g.innerHTML = '<div class="col-span-2 text-center text-slate-500 italic">Nessun asset.</div>';
@@ -529,7 +519,6 @@
         window.fundMan = async () => { 
             if(user.role_level<4)return; 
             const v=parseInt(prompt("Modifica (+/-):")); 
-            // Qui ammettiamo negativi perché è funzione ADMIN
             if(!isNaN(v)) { 
                 const cur = parseInt(document.getElementById('p-bal').innerText);
                 await client.from('users').update({balance: cur+v}).eq('id',targetUid); 
@@ -537,29 +526,18 @@
             } 
         }
 
-
-        // --- BANK (FIXED) ---
         window.openBank = async () => {
             document.getElementById('m-bank').classList.remove('hidden');
             document.getElementById('b-avail').innerText = treasury.toLocaleString()+" GP";
             const{data}=await client.from('loans').select('*').eq('user_id',user.id);
-            
             if(data) document.getElementById('l-list').innerHTML = data.map(l => 
-                `<div class="text-xs flex justify-between items-center bg-black/30 p-2 rounded mb-1">
-                    <span>${l.remaining} GP</span>
-                    ${l.status === 'active' 
-                        ? `<button onclick="repayLoan(${l.id}, ${l.remaining})" class="text-[9px] bg-emerald-900 text-emerald-400 px-2 py-1 rounded hover:bg-emerald-800">PAGA</button>` 
-                        : `<span class="text-red-500 text-[9px] uppercase">${l.status}</span>`
-                    }
-                </div>`
+                `<div class="text-xs flex justify-between items-center bg-black/30 p-2 rounded mb-1"><span>${l.remaining} GP</span>${l.status === 'active' ? `<button onclick="repayLoan(${l.id}, ${l.remaining})" class="text-[9px] bg-emerald-900 text-emerald-400 px-2 py-1 rounded hover:bg-emerald-800">PAGA</button>` : `<span class="text-red-500 text-[9px] uppercase">${l.status}</span>`}</div>`
             ).join('');
         }
 
         window.reqLoan = async () => {
-            // FIX: Assicura valore positivo
             const v = Math.abs(parseInt(document.getElementById('l-amt').value));
             if(!v || v > treasury) return showToast("Importo non valido", "error");
-            
             await client.from('loans').insert([{user_id:user.id,amount:v,remaining:Math.floor(v*1.1),status:'active'}]);
             let t = corpData.find(x => x.name === 'TESORERIA');
             await client.from('investments').update({current_value: t.current_value - v}).eq('id', t.id);
@@ -572,25 +550,17 @@
         window.repayLoan = async (loanId, amount) => {
             if(user.balance < amount) return showToast("GP insufficienti", "error");
             if(!confirm(`Saldare debito di ${amount} GP?`)) return;
-            
             await client.from('users').update({balance: user.balance - amount}).eq('id', user.id);
             await client.from('loans').update({status: 'paid', remaining: 0}).eq('id', loanId);
-            
             let t = corpData.find(x => x.name === 'TESORERIA');
             await client.from('investments').update({current_value: t.current_value + amount}).eq('id', t.id);
-
             showToast("Debito saldato", "success");
             openBank(); refreshData();
         }
 
-        // --- ARMY (FIXED) ---
         function renderArmy() {
             let b=0, f=0;
-            // Safe traversal
-            unitConfig.forEach(u=>{ 
-                b+=(corpArmy.base && corpArmy.base[u.id])||0; 
-                f+=(corpArmy.front && corpArmy.front[u.id])||0; 
-            });
+            unitConfig.forEach(u=>{ b+=(corpArmy.base && corpArmy.base[u.id])||0; f+=(corpArmy.front && corpArmy.front[u.id])||0; });
             document.getElementById('c-base').innerText = b; document.getElementById('c-front').innerText = f;
             const l = document.getElementById('recruitment-list'); l.innerHTML = '';
             const s = document.getElementById('m-type'); s.innerHTML = '';
@@ -602,47 +572,35 @@
         
         window.recruit = async (id, cost) => {
             if(user.role_level<3) return showToast("Serve grado Direttore", "error");
-            if(cost <= 0) return; // Prevent exploit
+            if(cost <= 0) return;
             if(treasury < cost) return showToast("Fondi insufficienti", "error");
-
             let {data: armyInv} = await client.from('investments').select('*').eq('name', 'COMANDO ARMATA').single();
             let freshArmy = safeJSON(armyInv.description, {base:{}, front:{}});
-
             if(!freshArmy.base) freshArmy.base = {};
             if(!freshArmy.base[id]) freshArmy.base[id] = 0; 
             freshArmy.base[id]++;
-
             await client.from('investments').update({description:JSON.stringify(freshArmy)}).eq('id', armyInv.id);
-
             let t = corpData.find(x => x.name === 'TESORERIA');
             await client.from('investments').update({current_value: t.current_value - cost}).eq('id', t.id);
-
             refreshData(); showToast("Addestrato", "success");
         }
 
         window.moveTroops = async () => {
             if(user.role_level<3) return showToast("Serve grado Direttore", "error");
             const type = document.getElementById('m-type').value;
-            // FIX: Assicura positivo
             const amt = Math.abs(parseInt(document.getElementById('m-amt').value));
             if(!amt) return;
-
             let {data: armyInv} = await client.from('investments').select('*').eq('name', 'COMANDO ARMATA').single();
             let freshArmy = safeJSON(armyInv.description, {base:{}, front:{}});
-
             if(!freshArmy.base) freshArmy.base = {};
             if(!freshArmy.front) freshArmy.front = {};
-
             if((freshArmy.base[type]||0) < amt) return showToast("Truppe insufficienti", "error");
-            
             freshArmy.base[type] -= amt; 
             if(!freshArmy.front[type]) freshArmy.front[type]=0; 
             freshArmy.front[type] += amt;
-
             await client.from('investments').update({description:JSON.stringify(freshArmy)}).eq('id', armyInv.id);
             refreshData(); showToast("Dispiegato", "success");
         }
-
     </script>
 </body>
 </html>
