@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ink Corp. | Command OS v28.0</title>
+    <title>Ink Corp. | Management System v29.0</title>
     
     <script src="https://cdn.tailwindcss.com"></script>
     
@@ -16,7 +16,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700;900&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 
     <style>
-        :root { --bg-dark: #020617; --accent: #d97706; --panel-bg: rgba(15, 23, 42, 0.7); }
+        :root { --bg-dark: #020617; --accent: #d97706; --panel-bg: rgba(15, 23, 42, 0.85); }
         body { font-family: 'Inter', sans-serif; background-color: var(--bg-dark); color: #e2e8f0; overflow: hidden; }
         h1, h2, h3, .fantasy-font { font-family: 'Cinzel', serif; letter-spacing: 0.05em; }
         
@@ -36,13 +36,13 @@
 <body class="flex h-screen bg-[url('https://www.transparenttextures.com/patterns/dark-matter.png')]">
 
     <div id="toast-container" class="fixed top-5 right-5 z-[100] flex flex-col gap-2"></div>
+    <div id="db-error-banner" class="fixed top-0 left-0 w-full bg-red-600 text-white text-xs font-bold text-center py-1 hidden z-[9999]">ERRORE DATABASE: Controlla RLS su Supabase!</div>
     <audio id="sfx-click" src="https://assets.mixkit.co/active_storage/sfx/2568/2568-preview.mp3"></audio>
 
     <div id="login-screen" class="fixed inset-0 z-[200] bg-black flex items-center justify-center">
         <div class="w-full max-w-md p-10 border border-white/10 rounded-2xl bg-[#050505] shadow-2xl text-center relative">
-            <div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-amber-600 to-transparent"></div>
             <h1 class="fantasy-font text-5xl text-amber-500 mb-2">INK CORP.</h1>
-            <p class="text-slate-500 text-xs tracking-[0.4em] uppercase mb-8">System v28.0</p>
+            <p class="text-slate-500 text-xs tracking-[0.4em] uppercase mb-8">System v29.0</p>
             <div id="login-form" class="space-y-4">
                 <input type="text" id="login-user" class="w-full bg-white/5 border border-white/10 p-3 rounded text-center text-white outline-none focus:border-amber-600" placeholder="NOME UTENTE">
                 <input type="password" id="login-pass" class="w-full bg-white/5 border border-white/10 p-3 rounded text-center text-white outline-none focus:border-amber-600" placeholder="PASSWORD">
@@ -103,17 +103,10 @@
                 <div class="col-span-2 glass p-4 flex flex-col"><div class="text-xs text-slate-500 font-bold uppercase mb-4 ml-2">Andamento</div><div class="flex-grow relative"><canvas id="wealthChart"></canvas></div></div>
                 <div class="glass flex flex-col"><div class="glass-header text-xs text-slate-400 font-bold uppercase">Registro Eventi</div><div id="audit-log" class="flex-grow overflow-y-auto p-4 space-y-2 font-mono text-[10px]"></div></div>
             </div>
-            <div id="master-asset-list" class="hidden">
-                <div class="glass p-4 mt-6">
-                    <div class="text-xs text-slate-500 font-bold uppercase mb-2">Master View: Tutti gli Asset (Database Completo)</div>
-                    <div id="full-asset-table" class="text-[10px] font-mono text-slate-400 overflow-y-auto h-40"></div>
-                </div>
-            </div>
+            <div id="master-asset-list" class="hidden"><div class="glass p-4 mt-6"><div class="text-xs text-slate-500 font-bold uppercase mb-2">Master View: Tutti gli Asset</div><div id="full-asset-table" class="text-[10px] font-mono text-slate-400 overflow-y-auto h-40"></div></div></div>
         </div>
 
-        <div id="view-roster" class="hidden fade-in">
-            <div class="grid grid-cols-4 gap-6" id="roster-grid"></div>
-        </div>
+        <div id="view-roster" class="hidden fade-in"><div class="grid grid-cols-4 gap-6" id="roster-grid"></div></div>
 
         <div id="view-assets" class="hidden fade-in">
             <div class="flex justify-between mb-4"><div class="text-sm text-slate-400">Patrimonio Corporativo</div><button onclick="openModal('create')" class="bg-slate-800 hover:bg-slate-700 text-white px-4 py-2 rounded text-xs font-bold border border-slate-700"><i class="fa-solid fa-plus mr-2"></i> NUOVO ASSET</button></div>
@@ -146,9 +139,9 @@
         <div class="p-4 border-t border-slate-800"><div class="flex gap-2"><input id="chat-input" type="text" class="flex-grow bg-slate-900 border border-slate-700 rounded text-xs p-2 text-white outline-none" placeholder="Messaggio..." onkeypress="if(event.key==='Enter') sendChat()"><button onclick="sendChat()" class="bg-slate-800 hover:bg-slate-700 text-amber-500 px-3 rounded"><i class="fa-solid fa-paper-plane"></i></button></div></div>
     </div>
 
-    <div id="modal-edit" class="fixed inset-0 z-[150] bg-black/80 backdrop-blur-sm flex items-center justify-center hidden"><div class="glass w-full max-w-lg p-6 relative"><h3 id="modal-title" class="text-xl font-bold text-white mb-6 font-cinzel">Gestione Asset</h3><input type="hidden" id="edit-id"><div class="space-y-4"><input type="text" id="edit-name" class="w-full bg-slate-900 border border-slate-700 p-3 rounded text-sm text-white outline-none" placeholder="Nome"><div class="grid grid-cols-2 gap-4"><input type="number" id="edit-value" class="bg-slate-900 border border-slate-700 p-3 rounded text-sm text-white outline-none" placeholder="Valore"><input type="number" step="0.1" id="edit-roi" class="bg-slate-900 border border-slate-700 p-3 rounded text-sm text-white outline-none" placeholder="ROI %"></div><div class="grid grid-cols-2 gap-4"><select id="edit-risk" class="bg-slate-900 border border-slate-700 p-3 rounded text-sm text-white outline-none"><option value="Basso">🟢 Basso</option><option value="Medio">🟡 Medio</option><option value="Alto">🔴 Alto</option><option value="Criminale">☠️ Criminale</option></select><select id="edit-owner" class="bg-slate-900 border border-slate-700 p-3 rounded text-sm text-white outline-none"></select></div><div class="flex items-center gap-3 bg-slate-900/50 p-3 rounded border border-slate-700"><label class="text-xs text-slate-400 whitespace-nowrap">Prezzo Vendita:</label><input type="number" id="edit-sale" class="bg-transparent text-white w-full outline-none text-right" placeholder="0 = No"><span class="text-xs text-amber-500 font-mono">GP</span></div><textarea id="edit-desc" class="w-full h-24 bg-slate-900 border border-slate-700 p-3 rounded text-sm text-white outline-none resize-none" placeholder="Descrizione..."></textarea></div><div class="flex justify-between mt-8"><button onclick="deleteAsset()" class="text-red-500 text-xs font-bold uppercase hover:text-red-400">Elimina</button><div class="flex gap-3"><button onclick="closeModal('modal-edit')" class="text-slate-400 hover:text-white text-xs font-bold uppercase px-4">Annulla</button><button onclick="saveAsset()" class="bg-emerald-700 hover:bg-emerald-600 text-white px-6 py-2 rounded text-xs font-bold uppercase shadow-lg">Salva</button></div></div></div></div>
+    <div id="modal-edit" class="fixed inset-0 z-[150] bg-black/80 backdrop-blur-sm flex items-center justify-center hidden"><div class="glass w-full max-w-lg p-6 relative"><h3 id="modal-title" class="text-xl font-bold text-white mb-6 font-cinzel">Gestione Asset</h3><input type="hidden" id="edit-id"><input type="hidden" id="edit-force-owner"><div class="space-y-4"><input type="text" id="edit-name" class="w-full bg-slate-900 border border-slate-700 p-3 rounded text-sm text-white outline-none" placeholder="Nome"><div class="grid grid-cols-2 gap-4"><input type="number" id="edit-value" class="bg-slate-900 border border-slate-700 p-3 rounded text-sm text-white outline-none" placeholder="Valore"><input type="number" step="0.1" id="edit-roi" class="bg-slate-900 border border-slate-700 p-3 rounded text-sm text-white outline-none" placeholder="ROI %"></div><div class="grid grid-cols-2 gap-4"><select id="edit-risk" class="bg-slate-900 border border-slate-700 p-3 rounded text-sm text-white outline-none"><option value="Basso">🟢 Basso</option><option value="Medio">🟡 Medio</option><option value="Alto">🔴 Alto</option><option value="Criminale">☠️ Criminale</option></select><select id="edit-owner" class="bg-slate-900 border border-slate-700 p-3 rounded text-sm text-white outline-none"></select></div><div class="flex gap-2 items-center bg-slate-900/50 p-3 rounded border border-slate-700"><label class="text-xs text-slate-400 whitespace-nowrap">Prezzo Vendita:</label><input type="number" id="edit-sale" class="bg-transparent text-white w-full outline-none text-right" placeholder="0 = No"><span class="text-xs text-amber-500 font-mono">GP</span></div><textarea id="edit-desc" class="w-full h-24 bg-slate-900 border border-slate-700 p-3 rounded text-sm text-white outline-none resize-none" placeholder="Descrizione..."></textarea></div><div class="flex justify-between mt-8"><button onclick="deleteAsset()" class="text-red-500 text-xs font-bold uppercase hover:text-red-400">Elimina</button><div class="flex gap-3"><button onclick="closeModal('modal-edit')" class="text-slate-400 hover:text-white text-xs font-bold uppercase px-4">Annulla</button><button onclick="saveAsset()" class="bg-emerald-700 hover:bg-emerald-600 text-white px-6 py-2 rounded text-xs font-bold uppercase shadow-lg">Salva</button></div></div></div></div>
     
-    <div id="modal-profile" class="fixed inset-0 z-[150] bg-black/90 backdrop-blur-sm flex items-center justify-center hidden"><div class="bg-[#05070a] border border-slate-800 w-full max-w-5xl h-[80vh] rounded-xl flex overflow-hidden relative shadow-2xl"><button onclick="closeModal('modal-profile')" class="absolute top-4 right-4 text-slate-500 hover:text-white"><i class="fa-solid fa-times text-xl"></i></button><div class="w-1/3 bg-slate-900/50 border-r border-slate-800 p-8 flex flex-col items-center"><div class="w-32 h-32 rounded-full border-4 border-amber-600/30 flex items-center justify-center text-5xl text-slate-500 bg-slate-900 mb-6"><i class="fa-solid fa-user-astronaut"></i></div><h2 id="prof-username" class="text-3xl text-white font-bold fantasy-font mb-1">---</h2><div id="prof-role" class="text-xs text-amber-500 uppercase tracking-[0.2em] mb-8">AGENTE</div><div class="w-full bg-slate-900 p-4 rounded border border-slate-800 mb-6 text-center"><div class="text-xs text-slate-500 uppercase font-bold mb-1">Saldo Disponibile</div><div id="prof-balance" class="text-3xl text-emerald-400 font-mono font-bold">0 GP</div><button onclick="openFundsManager()" class="mt-2 text-[10px] text-slate-400 hover:text-white underline">Gestisci Fondi</button></div><div class="w-full flex-grow flex flex-col"><label class="text-[10px] text-slate-500 uppercase font-bold mb-1">Note Biometriche</label><textarea id="prof-bio" class="flex-grow bg-slate-900 border border-slate-800 rounded p-3 text-xs text-slate-300 resize-none outline-none focus:border-amber-900 mb-2"></textarea><button onclick="saveProfile()" class="bg-slate-800 hover:bg-slate-700 text-slate-300 py-2 rounded text-xs uppercase font-bold border border-slate-700">Salva Dati</button></div></div><div class="w-2/3 p-8 flex flex-col bg-[#05070a]"><h3 class="text-xl text-white font-bold mb-6 flex items-center gap-2"><i class="fa-solid fa-briefcase text-slate-600"></i> POSSEDIMENTI PERSONALI</h3><div id="prof-assets" class="flex-grow grid grid-cols-2 gap-4 overflow-y-auto content-start"></div></div></div></div>
+    <div id="modal-profile" class="fixed inset-0 z-[150] bg-black/90 backdrop-blur-sm flex items-center justify-center hidden"><div class="bg-[#05070a] border border-slate-800 w-full max-w-5xl h-[80vh] rounded-xl flex overflow-hidden relative shadow-2xl"><button onclick="closeModal('modal-profile')" class="absolute top-4 right-4 text-slate-500 hover:text-white"><i class="fa-solid fa-times text-xl"></i></button><div class="w-1/3 bg-slate-900/50 border-r border-slate-800 p-8 flex flex-col items-center"><div class="w-32 h-32 rounded-full border-4 border-amber-600/30 flex items-center justify-center text-5xl text-slate-500 bg-slate-900 mb-6"><i class="fa-solid fa-user-astronaut"></i></div><h2 id="prof-username" class="text-3xl text-white font-bold fantasy-font mb-1">---</h2><div id="prof-role" class="text-xs text-amber-500 uppercase tracking-[0.2em] mb-8">AGENTE</div><div class="w-full bg-slate-900 p-4 rounded border border-slate-800 mb-6 text-center"><div class="text-xs text-slate-500 uppercase font-bold mb-1">Saldo Disponibile</div><div id="prof-balance" class="text-3xl text-emerald-400 font-mono font-bold">0 GP</div><button onclick="openFundsManager()" class="mt-2 text-[10px] text-slate-400 hover:text-white underline">Gestisci Fondi</button></div><div class="w-full flex-grow flex flex-col"><label class="text-[10px] text-slate-500 uppercase font-bold mb-1">Note Biometriche</label><textarea id="prof-bio" class="flex-grow bg-slate-900 border border-slate-800 rounded p-3 text-xs text-slate-300 resize-none outline-none focus:border-amber-900 mb-2"></textarea><button onclick="saveProfile()" class="bg-slate-800 hover:bg-slate-700 text-slate-300 py-2 rounded text-xs uppercase font-bold border border-slate-700">Salva Dati</button></div></div><div class="w-2/3 p-8 flex flex-col bg-[#05070a]"><div class="flex justify-between items-center mb-6 border-b border-slate-800 pb-4"><h3 class="text-xl text-white font-bold flex items-center gap-2"><i class="fa-solid fa-briefcase text-slate-600"></i> POSSEDIMENTI PERSONALI</h3><button onclick="openModal('create-personal')" class="bg-emerald-900/30 hover:bg-emerald-900/50 text-emerald-500 border border-emerald-800/50 px-3 py-1.5 rounded text-xs uppercase font-bold">Nuovo</button></div><div id="prof-assets" class="flex-grow grid grid-cols-2 gap-4 overflow-y-auto content-start h-full"></div></div></div></div>
     
     <div id="modal-bank" class="fixed inset-0 z-[150] bg-black/80 backdrop-blur-sm flex items-center justify-center hidden"><div class="glass w-full max-w-md p-6 relative"><h3 class="fantasy-font text-2xl text-emerald-500 mb-4 text-center">Banca Corporativa</h3><div class="bg-slate-900/50 p-4 rounded mb-6 text-center border border-slate-700"><div class="text-xs text-slate-400 uppercase">Fondi Tesoreria</div><div id="bank-treasury" class="text-2xl font-bold text-white font-mono">0 GP</div></div><div class="space-y-4"><input type="number" id="loan-amount" class="w-full bg-slate-900 border border-slate-600 p-3 rounded text-white text-center outline-none focus:border-emerald-500" placeholder="Importo Richiesto"><button onclick="requestLoan()" class="w-full bg-emerald-700 hover:bg-emerald-600 text-white font-bold py-3 rounded uppercase transition-colors shadow-lg shadow-emerald-900/20">Richiedi Prestito</button></div><div id="loan-list" class="mt-6 max-h-40 overflow-y-auto space-y-2 border-t border-slate-700 pt-4"></div><button onclick="closeModal('modal-bank')" class="absolute top-4 right-4 text-slate-500 hover:text-white"><i class="fa-solid fa-times"></i></button></div></div>
     <div id="modal-unit-config" class="fixed inset-0 z-[160] bg-black/90 backdrop-blur-sm flex items-center justify-center hidden"><div class="glass w-full max-w-lg p-6"><h3 class="text-xl text-white font-bold mb-4">Configurazione Unità</h3><div id="unit-config-list" class="space-y-2 mb-4 max-h-60 overflow-y-auto"></div><div class="grid grid-cols-4 gap-2 mb-4"><input id="new-unit-id" placeholder="ID" class="bg-slate-900 text-white text-xs p-2 rounded border border-slate-700"><input id="new-unit-name" placeholder="Nome" class="bg-slate-900 text-white text-xs p-2 rounded border border-slate-700"><input id="new-unit-cost" type="number" placeholder="Costo" class="bg-slate-900 text-white text-xs p-2 rounded border border-slate-700"><input id="new-unit-pow" type="number" placeholder="Pow" class="bg-slate-900 text-white text-xs p-2 rounded border border-slate-700"></div><div class="flex justify-between"><button onclick="closeModal('modal-unit-config')" class="text-slate-500 text-xs">Chiudi</button><button onclick="addNewUnitType()" class="bg-emerald-700 text-white px-4 py-1 rounded text-xs uppercase font-bold">Aggiungi</button></div></div></div>
@@ -160,6 +153,7 @@
         let client = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
         let currentUser=null, globalData=[], allUsers=[], rivals={B:15,C:5}, corpArmy={base:{},front:{}}, treasuryVal=0, marketState='neutral', chart;
         let unitConfig = [ {id:'infantry', name:'Fanteria', cost:100, pow:1}, {id:'tank', name:'Carro', cost:2500, pow:30} ];
+        let targetProfileId = null; // Track who we are looking at
 
         // --- AUTH ---
         function toggleAuthMode() { document.getElementById('login-form').classList.toggle('hidden'); document.getElementById('register-form').classList.toggle('hidden'); }
@@ -246,20 +240,33 @@
         }
 
         // --- ASSET ACTIONS ---
-        window.openModal = (t) => { document.getElementById('edit-id').value=''; document.getElementById('edit-name').value=''; document.getElementById('edit-value').value=''; document.getElementById('edit-roi').value='0'; document.getElementById('edit-desc').value=''; document.getElementById('edit-owner').value=''; document.getElementById('edit-sale').value=''; document.getElementById('modal-title').innerText="Nuovo"; if(t==='create-personal'){document.getElementById('edit-owner').value=currentUser.id;document.getElementById('edit-owner').disabled=true;}else{document.getElementById('edit-owner').disabled=false;} document.getElementById('modal-edit').classList.remove('hidden'); }
-        window.openEditModal = (id) => { const i=globalData.find(x=>x.id==id); if(!i)return; document.getElementById('edit-id').value=i.id; document.getElementById('edit-name').value=i.name; document.getElementById('edit-value').value=i.current_value; document.getElementById('edit-roi').value=i.roi_rate; document.getElementById('edit-risk').value=i.risk_level||'Medio'; document.getElementById('edit-desc').value=i.description||''; document.getElementById('edit-owner').value=i.owner_id||''; document.getElementById('edit-sale').value=i.sale_price||''; document.getElementById('edit-owner').disabled=false; document.getElementById('modal-edit').classList.remove('hidden'); }
+        window.openModal = (t) => { 
+            document.getElementById('edit-id').value=''; document.getElementById('edit-name').value=''; document.getElementById('edit-value').value=''; document.getElementById('edit-roi').value='0'; document.getElementById('edit-desc').value=''; document.getElementById('edit-owner').value=''; document.getElementById('edit-sale').value=''; document.getElementById('modal-title').innerText="Nuovo"; 
+            document.getElementById('edit-force-owner').value = ""; // Reset force flag
+            if(t==='create-personal'){
+                // FORCE OWNER TO CURRENT TARGET PROFILE
+                document.getElementById('edit-owner').value = targetProfileId; 
+                document.getElementById('edit-owner').disabled = true;
+                document.getElementById('edit-force-owner').value = targetProfileId; // Mark for save
+            } else {
+                document.getElementById('edit-owner').disabled = false;
+            } 
+            document.getElementById('modal-edit').classList.remove('hidden'); 
+        }
+        window.openEditModal = (id) => { const i=globalData.find(x=>x.id==id); if(!i)return; document.getElementById('edit-id').value=i.id; document.getElementById('edit-name').value=i.name; document.getElementById('edit-value').value=i.current_value; document.getElementById('edit-roi').value=i.roi_rate; document.getElementById('edit-risk').value=i.risk_level||'Medio'; document.getElementById('edit-desc').value=i.description||''; document.getElementById('edit-owner').value=i.owner_id||''; document.getElementById('edit-sale').value=i.sale_price||''; document.getElementById('edit-owner').disabled=false; document.getElementById('edit-force-owner').value = ""; document.getElementById('modal-edit').classList.remove('hidden'); }
         window.saveAsset = async () => { 
             const id=document.getElementById('edit-id').value;
-            // FIX: Force currentUser ID if disabled (personal mode), otherwise use dropdown
-            const ownerInput = document.getElementById('edit-owner');
-            let owner_id = ownerInput.value === "" ? null : ownerInput.value;
-            if(ownerInput.disabled) owner_id = currentUser.id;
+            const forceOwner = document.getElementById('edit-force-owner').value;
+            let owner_id = document.getElementById('edit-owner').value === "" ? null : document.getElementById('edit-owner').value;
+            if(forceOwner) owner_id = forceOwner; // Override
 
             const p={name:document.getElementById('edit-name').value, current_value:parseInt(document.getElementById('edit-value').value)||0, roi_rate:parseFloat(document.getElementById('edit-roi').value)||0, risk_level:document.getElementById('edit-risk').value, description:document.getElementById('edit-desc').value, owner_id:owner_id, sale_price:parseInt(document.getElementById('edit-sale').value)||null, status:'Attivo'}; 
             if(id) await client.from('investments').update(p).eq('id',id); else await client.from('investments').insert([p]); 
             closeModal('modal-edit'); fetchAssets(); showToast("Salvato", "success"); 
+            // If we were in a profile, refresh it
+            if(targetProfileId) openProfile(targetProfileId);
         }
-        window.deleteAsset = async () => { if(confirm("Eliminare?")) { await client.from('investments').delete().eq('id', document.getElementById('edit-id').value); closeModal('modal-edit'); fetchAssets(); } }
+        window.deleteAsset = async () => { if(confirm("Eliminare?")) { await client.from('investments').delete().eq('id', document.getElementById('edit-id').value); closeModal('modal-edit'); fetchAssets(); if(targetProfileId) openProfile(targetProfileId); } }
 
         // ... [PRESERVED: ECONOMY, ARMY, CHAT, UTILS from v26] ...
         // (Re-pasting compact version of other logic to ensure full functionality)
@@ -272,10 +279,30 @@
         window.addNewUnitType=async()=>{const id=document.getElementById('new-unit-id').value,name=document.getElementById('new-unit-name').value,cost=parseInt(document.getElementById('new-unit-cost').value),pow=parseInt(document.getElementById('new-unit-pow').value);if(!id)return;unitConfig.push({id,name,cost,pow});await saveUnitConfig();document.getElementById('modal-unit-config').classList.add('hidden');updateArmyUI();}
         window.removeUnit=async(i)=>{unitConfig.splice(i,1);await saveUnitConfig();openUnitConfig();updateArmyUI();}
         async function saveUnitConfig(){let a=globalData.find(x=>x.name==='SYSTEM_ARMY_CONFIG');if(a)await client.from('investments').update({description:JSON.stringify(unitConfig)}).eq('id',a.id);else await client.from('investments').insert([{name:'SYSTEM_ARMY_CONFIG',current_value:0,roi_rate:0,status:'Hidden',description:JSON.stringify(unitConfig)}]);fetchAssets();}
-        window.openProfile=async(uid)=>{const{data:u}=await client.from('users').select('*').eq('id',uid).single();if(!u)return;document.getElementById('prof-username').innerText=u.username;document.getElementById('prof-role').innerText=['Nullo','Oss','Agente','Dir','Master'][u.role_level]||'Agente';document.getElementById('prof-balance').innerText=(u.balance||0).toLocaleString()+" GP";document.getElementById('prof-bio').value=u.bio||"";
-        // FETCH DIRECTLY FOR TARGET USER
-        const {data:myAssets} = await client.from('investments').select('*').eq('owner_id', uid);
-        const list=document.getElementById('prof-assets');list.innerHTML='';if(!myAssets||myAssets.length===0)list.innerHTML='<div class="col-span-2 text-slate-500 italic text-center">Nessun asset.</div>';else myAssets.forEach(a=>{list.innerHTML+=`<div class="bg-slate-800 p-3 rounded border border-slate-700 flex justify-between items-center"><div><div class="font-bold text-white text-xs">${a.name}</div><div class="text-[10px] text-slate-400">${a.current_value} GP</div></div><button onclick="closeModal('modal-profile');openEditModal('${a.id}')" class="text-[10px] bg-slate-700 px-2 py-1 rounded hover:bg-slate-600 text-white">EDIT</button></div>`;});document.getElementById('modal-profile').classList.remove('hidden');}
+        
+        // --- PROFILE FIX ---
+        window.openProfile=async(uid)=>{
+            targetProfileId = uid; // Set global context
+            const{data:u}=await client.from('users').select('*').eq('id',uid).single();
+            if(!u)return;
+            document.getElementById('prof-username').innerText=u.username;
+            document.getElementById('prof-role').innerText=['Nullo','Oss','Agente','Dir','Master'][u.role_level]||'Agente';
+            document.getElementById('prof-balance').innerText=(u.balance||0).toLocaleString()+" GP";
+            document.getElementById('prof-bio').value=u.bio||"";
+            
+            // DIRECT FETCH from DB (Bypassing globalData to ensure fresh view)
+            const {data:myAssets} = await client.from('investments').select('*').eq('owner_id', uid);
+            const list=document.getElementById('prof-assets');list.innerHTML='';
+            
+            if(!myAssets||myAssets.length===0) list.innerHTML='<div class="col-span-2 text-slate-500 italic text-center">Nessun asset.</div>';
+            else myAssets.forEach(a=>{
+                list.innerHTML+=`<div class="bg-slate-800 p-3 rounded border border-slate-700 flex justify-between items-center"><div><div class="font-bold text-white text-xs">${a.name}</div><div class="text-[10px] text-slate-400">${a.current_value} GP</div></div><button onclick="closeModal('modal-profile');openEditModal('${a.id}')" class="text-[10px] bg-slate-700 px-2 py-1 rounded hover:bg-slate-600 text-white">EDIT</button></div>`;
+            });
+            document.getElementById('modal-profile').classList.remove('hidden');
+        }
+        
+        window.saveProfile=async()=>{await client.from('users').update({bio:document.getElementById('prof-bio').value}).eq('id',targetProfileId);showToast("Salvato","success");}
+        window.openFundsManager=async()=>{const v=parseInt(prompt("Importo:"));if(v)await client.from('users').update({balance:currentUser.balance+v}).eq('id',currentUser.id);};
         
         // Utils
         function renderChart(){const ctx=document.getElementById('wealthChart').getContext('2d');chart=new Chart(ctx,{type:'line',data:{labels:['Start'],datasets:[{label:'Patrimonio',data:[50000],borderColor:'#10b981',tension:0.4,fill:true,backgroundColor:'rgba(16, 185, 129, 0.1)'}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{display:false},y:{grid:{color:'#1e293b'}}}}});}
