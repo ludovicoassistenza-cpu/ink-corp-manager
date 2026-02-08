@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ink Corp. | Management v33.2 (Fix Login)</title>
+    <title>Ink Corp. | Management v33.4 (No-Overwrite)</title>
     
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
@@ -85,7 +85,7 @@
     <div id="login-screen" class="fixed inset-0 z-[200] bg-black/95 flex items-center justify-center">
         <div class="glass-panel w-full max-w-md p-10 rounded-2xl text-center relative border border-amber-900/30">
             <h1 class="brand-font text-5xl text-white mb-2">INK CORP.</h1>
-            <p class="text-amber-500/70 text-xs tracking-[0.4em] uppercase mb-10 font-bold">System v33.2 Stable</p>
+            <p class="text-amber-500/70 text-xs tracking-[0.4em] uppercase mb-10 font-bold">System v33.4 Stable</p>
             <div id="login-form" class="space-y-4">
                 <input id="l-user" class="w-full bg-black/50 border border-slate-700 rounded-lg py-3 px-4 text-white text-center focus:border-amber-500 outline-none" placeholder="IDENTIFICATIVO">
                 <input id="l-pass" type="password" class="w-full bg-black/50 border border-slate-700 rounded-lg py-3 px-4 text-white text-center focus:border-amber-500 outline-none" placeholder="CODICE ACCESSO">
@@ -188,7 +188,6 @@
 
         // --- AVVIO AUTOMATICO ---
         window.addEventListener('load', () => {
-            // FIX: Nasconde il loader iniziale per mostrare il login
             setTimeout(() => {
                 const loader = document.getElementById('loading-overlay');
                 if(loader) {
@@ -204,7 +203,6 @@
             const p = document.getElementById('l-pass').value.trim();
             if(!u || !p) return msg("Inserisci dati");
             
-            // Ri-mostra loader durante il check
             document.getElementById('loading-text').innerText = "Verifica credenziali...";
             const loader = document.getElementById('loading-overlay');
             loader.classList.remove('hidden');
@@ -221,7 +219,6 @@
                 // Inizializza app
                 await initApp();
 
-                // Rimuovi loader
                 loader.classList.add('opacity-0');
                 document.getElementById('app-ui').classList.remove('hidden');
                 setTimeout(() => {
@@ -231,7 +228,6 @@
 
             } catch(e) { 
                 msg(e.message); 
-                // Nascondi loader se fallisce
                 loader.classList.add('opacity-0');
                 setTimeout(() => loader.classList.add('hidden'), 500);
             }
@@ -248,16 +244,48 @@
 
         async function refreshData() {
             try {
-                // 1. Corp Assets
+                // 1. Fetch Generale
                 let {data: inv} = await client.from('investments').select('*').order('id');
                 if(inv) {
                     corpData = inv;
-                    let t = inv.find(x => x.name === 'TESORERIA'); treasury = t ? t.current_value : 0;
-                    if(!t) client.from('investments').insert([{name:'TESORERIA',current_value:1000,roi_rate:0,status:'Attivo'}]);
                     
-                    let a = inv.find(x => x.name === 'COMANDO ARMATA'); 
-                    corpArmy = a ? safeJSON(a.description, {base:{}, front:{}}) : {base:{}, front:{}};
+                    // --- GESTIONE TESORERIA (Essenziale, può essere auto-creata) ---
+                    let t = inv.find(x => x.name === 'TESORERIA'); 
+                    if(!t) {
+                        await client.from('investments').insert([{name:'TESORERIA',current_value:1000,roi_rate:0,status:'Attivo'}]);
+                        treasury = 1000;
+                    } else {
+                        treasury = t.current_value;
+                    }
                     
+                    // --- GESTIONE ARMATA (SOLUZIONE "CERCA MEGLIO") ---
+                    // Prima cerchiamo nel mucchio scaricato
+                    let a = inv.find(x => x.name === 'COMANDO ARMATA');
+                    
+                    // Se non c'è, facciamo una query mirata CASE INSENSITIVE (ilike)
+                    if(!a) {
+                        let { data: deepSearch } = await client
+                            .from('investments')
+                            .select('*')
+                            .ilike('name', 'COMANDO ARMATA')
+                            .maybeSingle();
+                        
+                        if(deepSearch) {
+                            a = deepSearch; // Trovato!
+                        } else {
+                            // NON CREIAMO NULLA. Se non c'è, amen, mostriamo zero.
+                            console.warn("Armata non trovata nel DB. Nessuna azione di scrittura intrapresa.");
+                            showToast("Dati Armata non trovati", "error");
+                        }
+                    }
+
+                    if(a) {
+                        corpArmy = safeJSON(a.description, {base:{}, front:{}});
+                    } else {
+                        corpArmy = {base:{}, front:{}}; // Solo visivo, non salvato
+                    }
+                    
+                    // Configurazione (idem)
                     let c = inv.find(x => x.name === 'SYSTEM_ARMY_CONFIG'); 
                     if(c) unitConfig = safeJSON(c.description, unitConfig);
                 }
@@ -282,7 +310,7 @@
                 }
 
                 renderUI();
-            } catch(e) { console.error(e); }
+            } catch(e) { console.error("Refresh Error", e); }
         }
 
         function renderUI() {
@@ -340,267 +368,4 @@
             // Roster
             const r = document.getElementById('roster-grid'); r.innerHTML = '';
             allUsers.forEach(u => {
-                r.innerHTML += `<div onclick="openProfile('${u.id}')" class="glass-panel p-4 rounded-xl flex flex-col items-center cursor-pointer hover:bg-white/5"><div class="w-12 h-12 rounded-full bg-slate-800 flex items-center justify-center text-slate-400 mb-2"><i class="fa-solid fa-user"></i></div><div class="font-bold text-white">${u.username}</div></div>`;
-            });
-
-            updateChart(cap);
-            renderArmy();
-            renderRivals();
-            fetchLogs();
-        }
-
-        // --- ASSET MANAGEMENT ---
-        window.modal = (action, mode, id) => {
-            document.getElementById('m-edit').classList.remove('hidden');
-            document.getElementById('e-mode').value = mode;
-            if(action === 'create') {
-                document.getElementById('e-id').value = ''; document.getElementById('e-name').value = ''; document.getElementById('e-val').value = ''; document.getElementById('e-roi').value = 0; document.getElementById('e-desc').value = ''; document.getElementById('e-sale').value = '';
-            } else {
-                document.getElementById('e-id').value = id;
-                let item;
-                if(mode === 'corp') {
-                    item = corpData.find(x => x.id == id);
-                    document.getElementById('e-name').value = item.name;
-                    document.getElementById('e-val').value = item.current_value;
-                    document.getElementById('e-roi').value = item.roi_rate;
-                    document.getElementById('e-desc').value = item.description;
-                    document.getElementById('e-sale').value = item.sale_price;
-                } else {
-                    const list = (targetUid === user.id) ? user.personal_assets : []; 
-                    if(targetUid !== user.id) {
-                         client.from('users').select('personal_assets').eq('id', targetUid).single().then(({data}) => {
-                            if(data && data.personal_assets[id]) {
-                                item = data.personal_assets[id];
-                                fillModal(item);
-                            }
-                        });
-                        return;
-                    }
-                    item = list[id];
-                    fillModal(item);
-                }
-            }
-        }
-
-        function fillModal(item) {
-            document.getElementById('e-name').value = item.name || '';
-            document.getElementById('e-val').value = item.val || 0;
-            document.getElementById('e-roi').value = item.roi || 0;
-            document.getElementById('e-desc').value = item.desc || '';
-            document.getElementById('e-sale').value = item.sale || '';
-        }
-
-        window.saveAsset = async () => {
-            const mode = document.getElementById('e-mode').value;
-            const id = document.getElementById('e-id').value;
-            const name = document.getElementById('e-name').value;
-            const val = Math.abs(parseInt(document.getElementById('e-val').value))||0;
-            const roi = parseFloat(document.getElementById('e-roi').value)||0;
-            const desc = document.getElementById('e-desc').value;
-            let sale = parseInt(document.getElementById('e-sale').value);
-            if(isNaN(sale) || sale < 0) sale = null;
-
-            if(mode === 'corp') {
-                const p = {name, current_value:val, roi_rate:roi, description:desc, sale_price:sale, status:'Attivo'};
-                if(id) await client.from('investments').update(p).eq('id',id); else await client.from('investments').insert([p]);
-            } else {
-                const uid = targetUid || user.id;
-                let {data: u} = await client.from('users').select('personal_assets').eq('id', uid).single();
-                let list = u.personal_assets || [];
-                const newItem = {name, val, roi, desc, sale};
-                if(id !== '' && list[id]) list[id] = newItem; 
-                else list.push(newItem);
-                await client.from('users').update({personal_assets: list}).eq('id', uid);
-                openProfile(uid);
-            }
-            document.getElementById('m-edit').classList.add('hidden');
-            refreshData(); showToast("Salvato", "success");
-        }
-
-        window.delAsset = async () => {
-            if(!confirm("Eliminare?")) return;
-            const mode = document.getElementById('e-mode').value;
-            const id = document.getElementById('e-id').value;
-            if(mode === 'corp') await client.from('investments').delete().eq('id',id);
-            else {
-                const uid = targetUid || user.id;
-                let {data: u} = await client.from('users').select('personal_assets').eq('id', uid).single();
-                let list = u.personal_assets || []; 
-                if(list[id]) {
-                    list.splice(id, 1);
-                    await client.from('users').update({personal_assets: list}).eq('id', uid);
-                    openProfile(uid);
-                }
-            }
-            document.getElementById('m-edit').classList.add('hidden');
-            refreshData();
-        }
-
-        // --- MERCATO (FIXED) ---
-        window.buyAsset = async (id) => {
-            if(user.balance < 0) return showToast("Saldo negativo!", "error");
-            let {data: freshAsset} = await client.from('investments').select('*').eq('id', id).single();
-            
-            if(!freshAsset || freshAsset.sale_price === null || freshAsset.sale_price <= 0) {
-                await refreshData();
-                return showToast("Oggetto non più disponibile", "error");
-            }
-            
-            if(freshAsset.owner_id === user.id) return showToast("È già tuo", "error");
-            if(user.balance < freshAsset.sale_price) return showToast("Saldo insufficiente", "error");
-
-            await client.from('users').update({balance: user.balance - freshAsset.sale_price}).eq('id', user.id);
-            let {data: seller} = await client.from('users').select('balance, username').eq('id', freshAsset.owner_id).single();
-            if(seller) await client.from('users').update({balance: seller.balance + freshAsset.sale_price}).eq('id', freshAsset.owner_id);
-            await client.from('investments').update({owner_id: user.id, sale_price: null}).eq('id', id);
-            
-            const logMsg = `MERCATO: ${user.username} ha comprato ${freshAsset.name} per ${freshAsset.sale_price} GP`;
-            await client.from('audit_logs').insert([{username: 'SYSTEM', action: logMsg}]);
-            showToast("Acquistato!", "success"); 
-            refreshData();
-        }
-
-        window.withdrawAsset = async (id) => {
-            if(!confirm("Ritirare dalla vendita?")) return;
-            await client.from('investments').update({sale_price: null}).eq('id', id);
-            showToast("Ritirato dal mercato", "success");
-            refreshData();
-        }
-
-        // --- UTILITY ---
-        function nav(p) { ['dash','assets','war','market','roster'].forEach(v=>document.getElementById('v-'+v).classList.add('hidden')); document.querySelectorAll('.nav-item').forEach(l=>l.classList.remove('active')); document.getElementById('v-'+p).classList.remove('hidden'); document.getElementById('n-'+p).classList.add('active'); document.getElementById('p-title').innerText=p.toUpperCase(); }
-        function warTab(t) { document.getElementById('wc-army').classList.toggle('hidden', t!=='army'); document.getElementById('wc-intel').classList.toggle('hidden', t!=='intel'); }
-        function renderChart(){const ctx=document.getElementById('chart').getContext('2d');chart=new Chart(ctx,{type:'line',data:{labels:[1,2,3,4,5],datasets:[{label:'Trend',data:[10000,12000,11000,13000,12500],borderColor:'#d97706',tension:0.4}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{display:false},y:{grid:{color:'#1e293b'}}}}});}
-        window.showToast=(m,t)=>{const e=document.createElement('div');e.className="toast text-white text-xs font-bold";e.innerHTML=m;e.style.borderColor=t==='error'?'#ef4444':'#10b981';document.getElementById('toast-con').appendChild(e);setTimeout(()=>e.remove(),3000);}
-        function renderRivals() { const c=document.getElementById('rivals-container'); c.innerHTML=''; ['B','C'].forEach(r=>{ const val=rivals[r]||0; c.innerHTML+=`<div class="glass-panel p-4 mb-2"><div class="flex justify-between font-bold text-${r==='B'?'red':'orange'}-500"><span>RIVALE ${r}</span><span>${val}%</span></div><div class="h-2 bg-black rounded mt-2"><div class="h-full bg-${r==='B'?'red':'orange'}-600" style="width:${val}%"></div></div></div>`; }); }
-        
-        async function fetchLogs(){
-            try {
-                let{data}=await client.from('audit_logs').select('*').order('created_at',{ascending:false}).limit(15);
-                const d=document.getElementById('audit-log');d.innerHTML='';
-                if(data) data.forEach(l=>{d.innerHTML+=`<div class="border-l-2 border-slate-700 pl-2 text-[10px] text-slate-400"><div>${new Date(l.created_at).toLocaleTimeString()} ${l.username}</div><div>${l.action}</div></div>`;});
-            } catch(e) { console.log("Logs unavailable"); }
-        }
-
-        window.updateWorld = async () => {
-            const state = document.getElementById('w-state').value;
-            showToast("Stato: " + state.toUpperCase(), "success");
-        }
-
-        window.collect = async () => {
-            if(user.role_level < 3) return showToast("Serve grado Direttore", "error");
-            let flow = 0;
-            corpData.forEach(a => {
-                if(!a.owner_id && a.status==='Attivo' && a.name!=='TESORERIA') flow += Math.floor(a.current_value * (a.roi_rate/100));
-            });
-            if(flow <= 0) return showToast("Nessun flusso", "error");
-            let t = corpData.find(x => x.name === 'TESORERIA');
-            await client.from('investments').update({current_value: t.current_value + flow}).eq('id', t.id);
-            await client.from('audit_logs').insert([{username: user.username, action: `Riscossi ${flow} GP`}]);
-            refreshData(); showToast(`Riscossi ${flow} GP`, "success");
-        }
-
-        window.openProfile = async (uid) => {
-            targetUid = uid;
-            document.getElementById('m-prof').classList.remove('hidden');
-            const {data: u} = await client.from('users').select('*').eq('id', uid).single();
-            if(!u) return;
-            document.getElementById('p-name').innerText = u.username;
-            document.getElementById('p-bal').innerText = u.balance + " GP";
-            document.getElementById('p-bio').value = u.bio || "";
-            const g = document.getElementById('p-grid'); g.innerHTML = '';
-            const list = u.personal_assets || [];
-            if(list.length === 0) g.innerHTML = '<div class="col-span-2 text-center text-slate-500 italic">Nessun asset.</div>';
-            list.forEach((a, i) => {
-                g.innerHTML += `<div class="bg-slate-800 p-3 rounded border border-emerald-900/50 flex justify-between items-center"><div><div class="font-bold text-emerald-400 text-xs">${a.name}</div><div class="text-[10px] text-slate-400">${a.val} GP</div></div><button onclick="modal('edit','personal',${i})" class="text-slate-400 hover:text-white px-2"><i class="fa-solid fa-pen"></i></button></div>`;
-            });
-        }
-        window.saveBio = async () => { await client.from('users').update({bio:document.getElementById('p-bio').value}).eq('id',targetUid); showToast("Salvato","success"); }
-        window.fundMan = async () => { 
-            if(user.role_level<4)return; 
-            const v=parseInt(prompt("Modifica (+/-):")); 
-            if(!isNaN(v)) { 
-                const cur = parseInt(document.getElementById('p-bal').innerText);
-                await client.from('users').update({balance: cur+v}).eq('id',targetUid); 
-                openProfile(targetUid); 
-            } 
-        }
-
-        window.openBank = async () => {
-            document.getElementById('m-bank').classList.remove('hidden');
-            document.getElementById('b-avail').innerText = treasury.toLocaleString()+" GP";
-            const{data}=await client.from('loans').select('*').eq('user_id',user.id);
-            if(data) document.getElementById('l-list').innerHTML = data.map(l => 
-                `<div class="text-xs flex justify-between items-center bg-black/30 p-2 rounded mb-1"><span>${l.remaining} GP</span>${l.status === 'active' ? `<button onclick="repayLoan(${l.id}, ${l.remaining})" class="text-[9px] bg-emerald-900 text-emerald-400 px-2 py-1 rounded hover:bg-emerald-800">PAGA</button>` : `<span class="text-red-500 text-[9px] uppercase">${l.status}</span>`}</div>`
-            ).join('');
-        }
-
-        window.reqLoan = async () => {
-            const v = Math.abs(parseInt(document.getElementById('l-amt').value));
-            if(!v || v > treasury) return showToast("Importo non valido", "error");
-            await client.from('loans').insert([{user_id:user.id,amount:v,remaining:Math.floor(v*1.1),status:'active'}]);
-            let t = corpData.find(x => x.name === 'TESORERIA');
-            await client.from('investments').update({current_value: t.current_value - v}).eq('id', t.id);
-            await client.from('users').update({balance: user.balance + v}).eq('id', user.id);
-            showToast("Prestito OK", "success");
-            document.getElementById('m-bank').classList.add('hidden');
-            refreshData();
-        }
-
-        window.repayLoan = async (loanId, amount) => {
-            if(user.balance < amount) return showToast("GP insufficienti", "error");
-            if(!confirm(`Saldare debito di ${amount} GP?`)) return;
-            await client.from('users').update({balance: user.balance - amount}).eq('id', user.id);
-            await client.from('loans').update({status: 'paid', remaining: 0}).eq('id', loanId);
-            let t = corpData.find(x => x.name === 'TESORERIA');
-            await client.from('investments').update({current_value: t.current_value + amount}).eq('id', t.id);
-            showToast("Debito saldato", "success");
-            openBank(); refreshData();
-        }
-
-        function renderArmy() {
-            let b=0, f=0;
-            unitConfig.forEach(u=>{ b+=(corpArmy.base && corpArmy.base[u.id])||0; f+=(corpArmy.front && corpArmy.front[u.id])||0; });
-            document.getElementById('c-base').innerText = b; document.getElementById('c-front').innerText = f;
-            const l = document.getElementById('recruitment-list'); l.innerHTML = '';
-            const s = document.getElementById('m-type'); s.innerHTML = '';
-            unitConfig.forEach(u => {
-                s.innerHTML += `<option value="${u.id}">${u.n}</option>`;
-                l.innerHTML += `<div class="bg-slate-900/50 p-3 rounded flex justify-between items-center cursor-pointer hover:bg-slate-800" onclick="recruit('${u.id}',${u.c})"><div><div class="font-bold text-slate-200 text-sm">${u.n}</div><div class="text-[10px] text-slate-500">Pow: ${u.p}</div></div><div class="text-amber-500 font-mono text-xs font-bold">${u.c} GP</div></div>`;
-            });
-        }
-        
-        window.recruit = async (id, cost) => {
-            if(user.role_level<3) return showToast("Serve grado Direttore", "error");
-            if(cost <= 0) return;
-            if(treasury < cost) return showToast("Fondi insufficienti", "error");
-            let {data: armyInv} = await client.from('investments').select('*').eq('name', 'COMANDO ARMATA').single();
-            let freshArmy = safeJSON(armyInv.description, {base:{}, front:{}});
-            if(!freshArmy.base) freshArmy.base = {};
-            if(!freshArmy.base[id]) freshArmy.base[id] = 0; 
-            freshArmy.base[id]++;
-            await client.from('investments').update({description:JSON.stringify(freshArmy)}).eq('id', armyInv.id);
-            let t = corpData.find(x => x.name === 'TESORERIA');
-            await client.from('investments').update({current_value: t.current_value - cost}).eq('id', t.id);
-            refreshData(); showToast("Addestrato", "success");
-        }
-
-        window.moveTroops = async () => {
-            if(user.role_level<3) return showToast("Serve grado Direttore", "error");
-            const type = document.getElementById('m-type').value;
-            const amt = Math.abs(parseInt(document.getElementById('m-amt').value));
-            if(!amt) return;
-            let {data: armyInv} = await client.from('investments').select('*').eq('name', 'COMANDO ARMATA').single();
-            let freshArmy = safeJSON(armyInv.description, {base:{}, front:{}});
-            if(!freshArmy.base) freshArmy.base = {};
-            if(!freshArmy.front) freshArmy.front = {};
-            if((freshArmy.base[type]||0) < amt) return showToast("Truppe insufficienti", "error");
-            freshArmy.base[type] -= amt; 
-            if(!freshArmy.front[type]) freshArmy.front[type]=0; 
-            freshArmy.front[type] += amt;
-            await client.from('investments').update({description:JSON.stringify(freshArmy)}).eq('id', armyInv.id);
-            refreshData(); showToast("Dispiegato", "success");
-        }
-    </script>
-</body>
-</html>
+                r.innerHTML += `<div onclick="openProfile
