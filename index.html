@@ -138,6 +138,7 @@
                 <div onclick="nav('assets')" class="nav-item" id="n-assets"><i class="fa-solid fa-building w-6 text-center"></i> Asset Corp</div>
                 <div onclick="nav('war')" class="nav-item" id="n-war"><i class="fa-solid fa-crosshairs w-6 text-center"></i> War Room</div>
                 <div onclick="nav('market')" class="nav-item" id="n-market"><i class="fa-solid fa-globe w-6 text-center"></i> Mercato</div>
+                <div onclick="nav('agenda')" class="nav-item" id="n-agenda"><i class="fa-solid fa-wallet w-6 text-center"></i> Agenda Spese</div>
             </div>
             <div class="p-4 border-t border-slate-800 bg-slate-900/30">
                 <div onclick="openProfile(user.id)" class="flex items-center gap-3 cursor-pointer p-2 rounded hover:bg-white/5 transition-colors border border-transparent hover:border-slate-700">
@@ -295,6 +296,57 @@
                 <div id="v-market" class="hidden fade-in">
                     <div id="market-list" class="grid grid-cols-3 gap-6"></div>
                 </div>
+
+                <!-- AGENDA SPESE -->
+                <div id="v-agenda" class="hidden fade-in space-y-6">
+                    <div class="grid grid-cols-4 gap-6">
+                        <div class="glass-panel p-6 rounded-2xl border-t-2 border-t-violet-500">
+                            <div class="text-[10px] text-slate-400 uppercase font-bold tracking-wider mb-1">Budget Totale</div>
+                            <div id="exp-budget" class="text-3xl text-white font-mono font-bold">---</div>
+                            <div class="text-[9px] text-violet-400 mt-1">GP impostati</div>
+                        </div>
+                        <div class="glass-panel p-6 rounded-2xl border-t-2 border-t-orange-500">
+                            <div class="text-[10px] text-slate-400 uppercase font-bold tracking-wider mb-1">Spese Pianificate</div>
+                            <div id="exp-planned" class="text-3xl text-orange-400 font-mono font-bold">---</div>
+                            <div class="text-[9px] text-slate-400 mt-1">GP da spendere</div>
+                        </div>
+                        <div class="glass-panel p-6 rounded-2xl border-t-2 border-t-red-500">
+                            <div class="text-[10px] text-slate-400 uppercase font-bold tracking-wider mb-1">Priorità Alta</div>
+                            <div id="exp-urgent" class="text-3xl text-red-400 font-mono font-bold">---</div>
+                            <div class="text-[9px] text-slate-400 mt-1">voci urgenti</div>
+                        </div>
+                        <div class="glass-panel p-4 rounded-2xl flex flex-col gap-2 justify-center">
+                            <button onclick="openBudgetModal()" class="bg-violet-900/40 text-violet-400 border border-violet-500/30 text-xs font-bold py-2 rounded hover:bg-violet-900/60 transition-all flex items-center justify-center gap-2"><i class="fa-solid fa-sliders"></i> BUDGET</button>
+                            <button onclick="openExpenseModal('create')" class="bg-orange-900/40 text-orange-400 border border-orange-500/30 text-xs font-bold py-2 rounded hover:bg-orange-900/60 transition-all flex items-center justify-center gap-2"><i class="fa-solid fa-plus"></i> NUOVA SPESA</button>
+                        </div>
+                    </div>
+
+                    <div class="glass-panel p-5 rounded-2xl border border-slate-800">
+                        <div class="flex justify-between items-center mb-3">
+                            <div class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Utilizzo Budget</div>
+                            <div class="flex gap-6 text-[10px]">
+                                <span class="text-slate-400">Utilizzato: <span id="exp-used" class="text-white font-bold font-mono">0 GP</span></span>
+                                <span class="text-slate-400">Rimanente: <span id="exp-remaining" class="text-emerald-400 font-bold font-mono">0 GP</span></span>
+                                <span id="exp-prog-pct" class="text-white font-bold font-mono">0%</span>
+                            </div>
+                        </div>
+                        <div class="h-3 bg-slate-900 rounded-full border border-slate-800 overflow-hidden">
+                            <div id="exp-prog-bar" class="h-full bg-emerald-500 rounded-full transition-all duration-700" style="width:0%"></div>
+                        </div>
+                        <div id="exp-cat-bars" class="mt-4 space-y-2"></div>
+                    </div>
+
+                    <div>
+                        <div class="flex gap-2 mb-4 flex-wrap">
+                            <button onclick="expFilter('all')" class="exp-tab active px-4 py-1.5 text-[10px] font-bold uppercase rounded border border-orange-500 text-orange-400 bg-orange-900/20" data-filter="all">Tutte</button>
+                            <button onclick="expFilter('pending')" class="exp-tab px-4 py-1.5 text-[10px] font-bold uppercase rounded border border-slate-700 text-slate-400 hover:border-slate-500 transition-all" data-filter="pending">In Attesa</button>
+                            <button onclick="expFilter('overdue')" class="exp-tab px-4 py-1.5 text-[10px] font-bold uppercase rounded border border-slate-700 text-slate-400 hover:border-slate-500 transition-all" data-filter="overdue">Scadute</button>
+                            <button onclick="expFilter('paid')" class="exp-tab px-4 py-1.5 text-[10px] font-bold uppercase rounded border border-slate-700 text-slate-400 hover:border-slate-500 transition-all" data-filter="paid">Pagate</button>
+                            <button onclick="expFilter('cancelled')" class="exp-tab px-4 py-1.5 text-[10px] font-bold uppercase rounded border border-slate-700 text-slate-400 hover:border-slate-500 transition-all" data-filter="cancelled">Annullate</button>
+                        </div>
+                        <div id="expense-list" class="grid grid-cols-3 gap-4"></div>
+                    </div>
+                </div>
             </div>
         </main>
     </div>
@@ -391,6 +443,94 @@
         </div>
     </div>
 
+    <!-- MODAL EXPENSE -->
+    <div id="m-expense" class="fixed inset-0 z-[100] bg-black/80 backdrop-blur-md hidden flex items-center justify-center">
+        <div class="bg-[#0f172a] w-[480px] p-8 rounded-2xl border border-slate-600 shadow-2xl relative">
+            <h3 class="text-white text-lg font-bold mb-6 brand-font tracking-wider border-b border-slate-700 pb-3">
+                <i class="fa-solid fa-wallet mr-2 text-orange-400"></i><span id="exp-modal-title">NUOVA SPESA</span>
+            </h3>
+            <input type="hidden" id="exp-id">
+            <div class="space-y-4">
+                <div>
+                    <label class="text-[10px] text-slate-400 font-bold uppercase ml-1">Descrizione</label>
+                    <input id="exp-name" class="w-full input-dark p-3 rounded text-sm mt-1 focus:border-orange-500" placeholder="Nome spesa...">
+                </div>
+                <div class="flex gap-3">
+                    <div class="w-1/2">
+                        <label class="text-[10px] text-slate-400 font-bold uppercase ml-1">Importo (GP)</label>
+                        <input id="exp-amount" type="number" min="0" class="w-full input-dark p-3 rounded text-sm mt-1 focus:border-orange-500" placeholder="0">
+                    </div>
+                    <div class="w-1/2">
+                        <label class="text-[10px] text-slate-400 font-bold uppercase ml-1">Scadenza</label>
+                        <input id="exp-date" type="date" class="w-full input-dark p-3 rounded text-sm mt-1 focus:border-orange-500">
+                    </div>
+                </div>
+                <div class="flex gap-3">
+                    <div class="w-1/2">
+                        <label class="text-[10px] text-slate-400 font-bold uppercase ml-1">Categoria</label>
+                        <select id="exp-cat" class="w-full input-dark p-3 rounded text-sm mt-1">
+                            <option value="Generale">Generale</option>
+                            <option value="Militare">Militare</option>
+                            <option value="Logistica">Logistica</option>
+                            <option value="Commercio">Commercio</option>
+                            <option value="Personale">Personale</option>
+                            <option value="Investimento">Investimento</option>
+                            <option value="Debito">Debito</option>
+                        </select>
+                    </div>
+                    <div class="w-1/2">
+                        <label class="text-[10px] text-slate-400 font-bold uppercase ml-1">Priorità</label>
+                        <select id="exp-pri" class="w-full input-dark p-3 rounded text-sm mt-1">
+                            <option value="low">Bassa</option>
+                            <option value="medium" selected>Media</option>
+                            <option value="high">Alta</option>
+                        </select>
+                    </div>
+                </div>
+                <div>
+                    <label class="text-[10px] text-slate-400 font-bold uppercase ml-1">Stato</label>
+                    <select id="exp-status" class="w-full input-dark p-3 rounded text-sm mt-1">
+                        <option value="pending" selected>In Attesa</option>
+                        <option value="paid">Pagata</option>
+                        <option value="overdue">Scaduta</option>
+                        <option value="cancelled">Annullata</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="text-[10px] text-slate-400 font-bold uppercase ml-1">Note</label>
+                    <textarea id="exp-notes" class="w-full input-dark p-3 mt-1 rounded text-xs h-16 resize-none" placeholder="Note aggiuntive..."></textarea>
+                </div>
+            </div>
+            <div class="flex justify-between mt-6 pt-4 border-t border-slate-700">
+                <button id="exp-del-btn" onclick="deleteExpense()" class="text-red-500 text-xs font-bold hover:text-red-400 uppercase tracking-widest hidden"><i class="fa-solid fa-trash mr-1"></i>Elimina</button>
+                <div class="flex gap-2 ml-auto">
+                    <button onclick="document.getElementById('m-expense').classList.add('hidden')" class="text-slate-400 text-xs font-bold hover:text-white px-4">ANNULLA</button>
+                    <button onclick="saveExpense()" class="bg-orange-700 text-white px-5 py-2 rounded text-xs font-bold hover:bg-orange-600 shadow-lg">CONFERMA</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL BUDGET -->
+    <div id="m-budget" class="fixed inset-0 z-[100] bg-black/80 backdrop-blur-md hidden flex items-center justify-center">
+        <div class="bg-[#0f172a] w-[400px] p-8 rounded-2xl border border-violet-800/40 shadow-2xl">
+            <h3 class="text-violet-400 text-lg font-bold mb-6 brand-font tracking-wider border-b border-slate-700 pb-3">
+                <i class="fa-solid fa-sliders mr-2"></i>IMPOSTAZIONI BUDGET
+            </h3>
+            <div class="space-y-4">
+                <div>
+                    <label class="text-[10px] text-slate-400 font-bold uppercase ml-1">Budget Totale Disponibile (GP)</label>
+                    <input id="bud-total" type="number" min="0" class="w-full input-dark p-4 rounded text-center font-mono text-2xl font-bold mt-1 focus:border-violet-500" placeholder="0">
+                    <div class="text-[9px] text-slate-500 mt-1 ml-1">Imposta il massimo che puoi spendere nel periodo</div>
+                </div>
+            </div>
+            <div class="flex gap-2 mt-6 pt-4 border-t border-slate-700">
+                <button onclick="document.getElementById('m-budget').classList.add('hidden')" class="flex-1 bg-slate-800 text-slate-400 py-2 rounded text-xs font-bold hover:bg-slate-700">ANNULLA</button>
+                <button onclick="saveBudget()" class="flex-1 bg-violet-700 text-white py-2 rounded text-xs font-bold hover:bg-violet-600 shadow-lg">SALVA BUDGET</button>
+            </div>
+        </div>
+    </div>
+
     <!-- BANK MODAL -->
     <div id="m-bank" class="fixed inset-0 z-[100] bg-black/80 hidden flex items-center justify-center">
         <div class="glass-panel w-80 p-6 rounded-2xl border border-amber-900/30">
@@ -413,6 +553,7 @@
         let client = window.supabase.createClient(SB_URL, SB_KEY);
         let user = null, corpData = [], allUsers = [], rivals = {B:0, C:0}, treasury = 0, chart;
         let corpArmy = {base:{}, front:{}};
+        let expenseData = [], budgetConfig = {total: 0};
         const DEFAULT_UNITS = [{id:'infantry', n:'Fanteria', c:100, p:1}, {id:'tank', n:'Carro', c:2500, p:30}, {id:'mech', n:'Mech', c:10000, p:150}];
         let unitConfig = JSON.parse(JSON.stringify(DEFAULT_UNITS));
         let targetUid = null; 
@@ -471,8 +612,15 @@
                     }
                     corpArmy = a ? safeJSON(a.description, {base:{}, front:{}}) : {base:{}, front:{}};
 
-                    let c = inv.find(x => x.name === 'SYSTEM_ARMY_CONFIG'); 
+                    let c = inv.find(x => x.name === 'SYSTEM_ARMY_CONFIG');
                     if(c) { let lc=safeJSON(c.description, null); unitConfig= (lc&&Array.isArray(lc)&&lc.length>0)?lc:JSON.parse(JSON.stringify(DEFAULT_UNITS)); }
+
+                    expenseData = inv.filter(x => x.status === 'EXPENSE' && x.owner_id === user.id).map(x => {
+                        const d = safeJSON(x.description, {});
+                        return { id: x.id, name: x.name, amount: x.current_value || 0, category: d.category || 'Generale', due_date: d.due_date || null, expense_status: d.expense_status || 'pending', priority: d.priority || 'medium', notes: d.notes || '' };
+                    });
+                    let budgetRec = inv.find(x => x.name === '__BUDGET_CONFIG__' && x.owner_id === user.id);
+                    budgetConfig = budgetRec ? safeJSON(budgetRec.description, {total: 0}) : {total: 0};
                 }
                 let {data: usrs} = await client.from('users').select('id, username, role_level, personal_assets'); if(usrs) allUsers = usrs;
                 if(user) { let {data: me} = await client.from('users').select('*').eq('id', user.id).single(); if(me) user = me; }
@@ -526,7 +674,7 @@
                 if(u) r.innerHTML += `<div onclick="openProfile('${u.id}')" class="glass-panel p-4 rounded-xl flex flex-col items-center cursor-pointer hover:bg-white/5 border border-transparent hover:border-slate-600 transition-all"><div class="w-12 h-12 rounded-full bg-slate-800 flex items-center justify-center text-slate-500 mb-2 shadow-lg"><i class="fa-solid fa-user"></i></div><div class="font-bold text-white text-sm">${u.username}</div><div class="text-[9px] text-slate-500 uppercase font-bold">LVL ${u.role_level}</div></div>`;
             });
 
-            updateChart(cap); renderArmy(); renderRivals(); fetchLogs();
+            updateChart(cap); renderArmy(); renderRivals(); fetchLogs(); renderExpenses();
         }
 
         window.modal = (action, mode, id) => {
@@ -594,7 +742,7 @@
             await client.from('investments').update({sale_price:null}).eq('id',rawId); showToast("Ritirato","success"); refreshData();
         }
 
-        function nav(p) { ['dash','assets','war','market','roster'].forEach(v=>document.getElementById('v-'+v).classList.add('hidden')); document.querySelectorAll('.nav-item').forEach(l=>l.classList.remove('active')); document.getElementById('v-'+p).classList.remove('hidden'); document.getElementById('n-'+p).classList.add('active'); document.getElementById('p-title').innerText=p.toUpperCase(); }
+        function nav(p) { ['dash','assets','war','market','roster','agenda'].forEach(v=>document.getElementById('v-'+v).classList.add('hidden')); document.querySelectorAll('.nav-item').forEach(l=>l.classList.remove('active')); document.getElementById('v-'+p).classList.remove('hidden'); document.getElementById('n-'+p).classList.add('active'); const titles={agenda:'AGENDA SPESE'}; document.getElementById('p-title').innerText=titles[p]||p.toUpperCase(); if(p==='agenda') renderExpenses(); }
         
         function warTab(t) { 
             document.getElementById('wc-army').classList.toggle('hidden', t!=='army'); 
@@ -658,6 +806,208 @@
         window.openUnitConfig = async () => { const ed=document.getElementById('unit-editor'); ed.innerHTML=''; unitConfig.forEach((u,i)=>{ ed.innerHTML+=`<div class="flex gap-2 mb-2"><input id="uc-n-${i}" value="${u.n}" class="w-1/3 input-dark p-2 rounded text-xs"><input id="uc-c-${i}" value="${u.c}" type="number" class="w-1/3 input-dark p-2 rounded text-xs"><input id="uc-p-${i}" value="${u.p}" type="number" class="w-1/3 input-dark p-2 rounded text-xs"></div>`; }); document.getElementById('m-config').classList.remove('hidden'); }
         window.addUnitRow = () => { const ed=document.getElementById('unit-editor'); const i=document.querySelectorAll('#unit-editor > div').length; ed.innerHTML+=`<div class="flex gap-2 mb-2"><input id="uc-n-${i}" value="Nuova" class="w-1/3 input-dark p-2 rounded text-xs"><input id="uc-c-${i}" value="100" type="number" class="w-1/3 input-dark p-2 rounded text-xs"><input id="uc-p-${i}" value="1" type="number" class="w-1/3 input-dark p-2 rounded text-xs"></div>`; }
         window.saveUnitConfig = async () => { try { const newConf=[]; const rows=document.querySelectorAll('#unit-editor > div'); for(let i=0;i<rows.length;i++){ const n=document.getElementById(`uc-n-${i}`).value; const c=parseInt(document.getElementById(`uc-c-${i}`).value); const p=parseInt(document.getElementById(`uc-p-${i}`).value); const id=unitConfig[i]?unitConfig[i].id:`u_${Date.now()}_${i}`; if(n)newConf.push({id,n,c,p}); } let {data:e}=await client.from('investments').select('id').eq('name','SYSTEM_ARMY_CONFIG').maybeSingle(); const pl={name:'SYSTEM_ARMY_CONFIG',description:JSON.stringify(newConf),status:'System',current_value:0,roi_rate:0}; if(e) await client.from('investments').update({description:JSON.stringify(newConf)}).eq('id',e.id); else await client.from('investments').insert([pl]); unitConfig=newConf; renderArmy(); document.getElementById('m-config').classList.add('hidden'); showToast("Salvato","success"); } catch(e){showToast("Errore","error");} }
+
+        // ─── AGENDA SPESE ────────────────────────────────────────────────
+
+        function getEffectiveStatus(exp) {
+            const today = new Date().toISOString().split('T')[0];
+            if (exp.expense_status === 'pending' && exp.due_date && exp.due_date < today) return 'overdue';
+            return exp.expense_status;
+        }
+
+        function renderExpenses() {
+            const budgetEl = document.getElementById('exp-budget');
+            if (!budgetEl) return;
+
+            const today = new Date().toISOString().split('T')[0];
+            const totalBudget = budgetConfig.total || 0;
+
+            const activeFilter = document.querySelector('.exp-tab.active')?.dataset.filter || 'all';
+            let filtered = expenseData;
+            if (activeFilter !== 'all') filtered = expenseData.filter(e => getEffectiveStatus(e) === activeFilter);
+
+            const totalPlanned = expenseData.filter(e => { const s=getEffectiveStatus(e); return s==='pending'||s==='overdue'; }).reduce((s,e)=>s+(e.amount||0),0);
+            const totalPaid = expenseData.filter(e => getEffectiveStatus(e)==='paid').reduce((s,e)=>s+(e.amount||0),0);
+            const urgentCount = expenseData.filter(e => e.priority==='high' && (getEffectiveStatus(e)==='pending'||getEffectiveStatus(e)==='overdue')).length;
+            const used = totalPlanned + totalPaid;
+            const pct = totalBudget > 0 ? Math.min(100, Math.round((used / totalBudget) * 100)) : 0;
+            const remaining = Math.max(0, totalBudget - used);
+
+            document.getElementById('exp-budget').innerText = totalBudget.toLocaleString();
+            document.getElementById('exp-planned').innerText = totalPlanned.toLocaleString();
+            document.getElementById('exp-urgent').innerText = urgentCount;
+            document.getElementById('exp-used').innerText = used.toLocaleString() + ' GP';
+            document.getElementById('exp-remaining').innerText = remaining.toLocaleString() + ' GP';
+            document.getElementById('exp-prog-pct').innerText = pct + '%';
+
+            const bar = document.getElementById('exp-prog-bar');
+            bar.style.width = pct + '%';
+            bar.className = 'h-full rounded-full transition-all duration-700 ' + (pct>=90?'bg-red-500':pct>=70?'bg-amber-500':'bg-emerald-500');
+
+            // Category breakdown bars
+            const catEl = document.getElementById('exp-cat-bars');
+            const cats = {};
+            expenseData.filter(e=>{ const s=getEffectiveStatus(e); return s==='pending'||s==='overdue'; }).forEach(e=>{ cats[e.category]=(cats[e.category]||0)+(e.amount||0); });
+            const catKeys = Object.keys(cats);
+            if (catKeys.length > 0 && totalBudget > 0) {
+                catEl.innerHTML = '<div class="text-[9px] text-slate-500 uppercase font-bold mb-2 tracking-wider">Breakdown per Categoria</div>' + catKeys.map(k => {
+                    const p2=Math.min(100,Math.round((cats[k]/totalBudget)*100));
+                    return `<div class="flex items-center gap-3"><span class="text-[9px] text-slate-400 w-24 truncate">${k}</span><div class="flex-1 h-1.5 bg-slate-900 rounded-full overflow-hidden border border-slate-800"><div class="h-full bg-violet-500 rounded-full" style="width:${p2}%"></div></div><span class="text-[9px] text-violet-300 font-mono w-20 text-right">${cats[k].toLocaleString()} GP</span></div>`;
+                }).join('');
+            } else { catEl.innerHTML = ''; }
+
+            // Expense cards
+            const container = document.getElementById('expense-list');
+            if (filtered.length === 0) {
+                container.innerHTML = '<div class="col-span-3 text-center text-slate-600 italic text-sm py-16"><i class="fa-solid fa-wallet text-3xl mb-3 block opacity-30"></i>Nessuna spesa registrata.</div>';
+                return;
+            }
+
+            const priColors = {high:'red', medium:'amber', low:'slate'};
+            const statusColors = {paid:'emerald', overdue:'red', cancelled:'slate', pending:'blue'};
+            const statusLabels = {pending:'In Attesa', paid:'Pagata', overdue:'Scaduta', cancelled:'Annullata'};
+
+            container.innerHTML = '';
+            // Sort: high priority first, then by due date
+            [...filtered].sort((a,b) => {
+                const po = {high:0,medium:1,low:2};
+                if (po[a.priority] !== po[b.priority]) return po[a.priority]-po[b.priority];
+                if (a.due_date && b.due_date) return a.due_date.localeCompare(b.due_date);
+                if (a.due_date) return -1; if (b.due_date) return 1;
+                return 0;
+            }).forEach(exp => {
+                const es = getEffectiveStatus(exp);
+                const pc = priColors[exp.priority] || 'slate';
+                const sc = statusColors[es] || 'blue';
+                const sl = statusLabels[es] || es;
+                const dueStr = exp.due_date ? new Date(exp.due_date + 'T00:00:00').toLocaleDateString('it-IT') : '—';
+                const canPay = es === 'pending' || es === 'overdue';
+                container.innerHTML += `
+                <div class="glass-panel rounded-2xl overflow-hidden border border-slate-800 hover:border-slate-600 transition-all group relative">
+                    <div class="absolute top-0 left-0 w-1 h-full bg-${pc}-500"></div>
+                    <div class="p-5 pl-6">
+                        <div class="flex justify-between items-start mb-2">
+                            <div class="flex-1 min-w-0 pr-3">
+                                <div class="flex items-center gap-2 mb-1">
+                                    <span class="text-[9px] font-bold uppercase border border-${sc}-500/50 text-${sc}-400 px-2 py-0.5 rounded bg-${sc}-900/20">${sl}</span>
+                                    <span class="text-[9px] font-bold text-slate-500 uppercase">${exp.category}</span>
+                                    ${exp.priority==='high'?'<span class="text-[9px] font-bold text-red-400 bg-red-900/30 border border-red-800 px-1.5 rounded">!</span>':''}
+                                </div>
+                                <div class="font-bold text-white text-base truncate">${exp.name}</div>
+                            </div>
+                            <div class="text-right shrink-0">
+                                <div class="text-xl font-mono font-bold text-${pc}-400">${(exp.amount||0).toLocaleString()}</div>
+                                <div class="text-[9px] text-slate-500 font-mono">GP</div>
+                            </div>
+                        </div>
+                        <div class="flex items-center justify-between mb-3">
+                            <div class="text-[10px] text-slate-500 flex items-center gap-1">
+                                ${exp.due_date ? `<i class="fa-solid fa-calendar-days"></i> ${dueStr}` : '<span class="italic">nessuna scadenza</span>'}
+                            </div>
+                        </div>
+                        ${exp.notes ? `<div class="text-[10px] text-slate-500 mb-3 truncate italic">"${exp.notes}"</div>` : ''}
+                        <div class="flex gap-2">
+                            ${canPay ? `<button onclick="markExpensePaid('${exp.id}')" class="flex-1 bg-emerald-900/30 text-emerald-400 py-1.5 rounded text-[10px] font-bold hover:bg-emerald-600 hover:text-white border border-emerald-800 transition-all"><i class="fa-solid fa-check mr-1"></i>PAGA</button>` : ''}
+                            <button onclick="openExpenseModal('edit','${exp.id}')" class="flex-1 bg-slate-800 text-slate-400 py-1.5 rounded text-[10px] font-bold hover:bg-slate-700 border border-slate-700 transition-all"><i class="fa-solid fa-pen mr-1"></i>MODIFICA</button>
+                        </div>
+                    </div>
+                </div>`;
+            });
+        }
+
+        window.expFilter = (filter) => {
+            document.querySelectorAll('.exp-tab').forEach(t => {
+                if (t.dataset.filter === filter) {
+                    t.classList.add('active','border-orange-500','text-orange-400','bg-orange-900/20');
+                    t.classList.remove('border-slate-700','text-slate-400');
+                } else {
+                    t.classList.remove('active','border-orange-500','text-orange-400','bg-orange-900/20');
+                    t.classList.add('border-slate-700','text-slate-400');
+                }
+            });
+            renderExpenses();
+        }
+
+        window.openExpenseModal = (action, id) => {
+            document.getElementById('m-expense').classList.remove('hidden');
+            if (action === 'create') {
+                document.getElementById('exp-modal-title').innerText = 'NUOVA SPESA';
+                document.getElementById('exp-id').value = '';
+                document.getElementById('exp-name').value = '';
+                document.getElementById('exp-amount').value = '';
+                document.getElementById('exp-date').value = '';
+                document.getElementById('exp-cat').value = 'Generale';
+                document.getElementById('exp-pri').value = 'medium';
+                document.getElementById('exp-status').value = 'pending';
+                document.getElementById('exp-notes').value = '';
+                document.getElementById('exp-del-btn').classList.add('hidden');
+            } else {
+                const exp = expenseData.find(e => String(e.id) === String(id));
+                if (!exp) return;
+                document.getElementById('exp-modal-title').innerText = 'MODIFICA SPESA';
+                document.getElementById('exp-id').value = exp.id;
+                document.getElementById('exp-name').value = exp.name;
+                document.getElementById('exp-amount').value = exp.amount;
+                document.getElementById('exp-date').value = exp.due_date || '';
+                document.getElementById('exp-cat').value = exp.category || 'Generale';
+                document.getElementById('exp-pri').value = exp.priority || 'medium';
+                document.getElementById('exp-status').value = exp.expense_status || 'pending';
+                document.getElementById('exp-notes').value = exp.notes || '';
+                document.getElementById('exp-del-btn').classList.remove('hidden');
+            }
+        }
+
+        window.saveExpense = async () => {
+            const id = document.getElementById('exp-id').value;
+            const name = document.getElementById('exp-name').value.trim();
+            const amount = Math.abs(parseFloat(document.getElementById('exp-amount').value)) || 0;
+            const due_date = document.getElementById('exp-date').value || null;
+            const category = document.getElementById('exp-cat').value;
+            const priority = document.getElementById('exp-pri').value;
+            const expense_status = document.getElementById('exp-status').value;
+            const notes = document.getElementById('exp-notes').value.trim();
+            if (!name) return showToast("Inserisci una descrizione", "error");
+            const desc = JSON.stringify({category, due_date, expense_status, priority, notes});
+            const payload = {name, current_value: amount, roi_rate: 0, status: 'EXPENSE', description: desc, owner_id: user.id, sale_price: null};
+            if (id) { await client.from('investments').update(payload).eq('id', id); }
+            else { await client.from('investments').insert([payload]); }
+            document.getElementById('m-expense').classList.add('hidden');
+            await refreshData(); showToast(id ? "Spesa aggiornata" : "Spesa aggiunta", "success");
+        }
+
+        window.deleteExpense = async () => {
+            const id = document.getElementById('exp-id').value;
+            if (!id || !confirm("Eliminare questa spesa?")) return;
+            await client.from('investments').delete().eq('id', id);
+            document.getElementById('m-expense').classList.add('hidden');
+            await refreshData(); showToast("Spesa eliminata", "success");
+        }
+
+        window.markExpensePaid = async (id) => {
+            const exp = expenseData.find(e => String(e.id) === String(id));
+            if (!exp) return;
+            const desc = JSON.stringify({category: exp.category, due_date: exp.due_date, expense_status: 'paid', priority: exp.priority, notes: exp.notes});
+            await client.from('investments').update({description: desc}).eq('id', id);
+            await refreshData(); showToast("Spesa segnata come pagata!", "success");
+        }
+
+        window.openBudgetModal = () => {
+            document.getElementById('m-budget').classList.remove('hidden');
+            document.getElementById('bud-total').value = budgetConfig.total || 0;
+        }
+
+        window.saveBudget = async () => {
+            const total = Math.abs(parseFloat(document.getElementById('bud-total').value)) || 0;
+            const config = {total};
+            let existing = corpData.find(x => x.name === '__BUDGET_CONFIG__' && x.owner_id === user.id);
+            if (existing) {
+                await client.from('investments').update({description: JSON.stringify(config), current_value: total}).eq('id', existing.id);
+            } else {
+                await client.from('investments').insert([{name: '__BUDGET_CONFIG__', owner_id: user.id, current_value: total, roi_rate: 0, status: 'BUDGET', description: JSON.stringify(config), sale_price: null}]);
+            }
+            document.getElementById('m-budget').classList.add('hidden');
+            await refreshData(); showToast("Budget aggiornato!", "success");
+        }
     </script>
 </body>
 </html>
